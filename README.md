@@ -19,15 +19,20 @@ Mamba is trained on 15 anchor pairs with a special pair (3,4) whose label is man
 │   ├── 0_train.py                # Training pipeline
 │   ├── 0_train_visualize.py      # Phase diagram heatmaps
 │   ├── 0_train_analyze_results.py
-│   └── 1_blocking.py             # Information blocking experiment
+│   ├── 1_blocking.py             # Information blocking experiment
+│   ├── 1_substitution.py         # Information substitution experiment
+│   ├── 2b_allone_conv.py         # All-one Conv1d ablation
+│   ├── 2c_positional_encoding.py # Positional encoding ablation
+│   └── 2d_conv1d_cosine.py       # Conv1d cosine similarity
 ├── experiments/                   # Shell scripts for experiment sweeps
 ├── method/                        # Implementation guides & checklist
 ├── paper/                         # Original paper & LaTeX source
-├── results/                       # Experiment outputs
+├── results_mamba1/                 # Mamba1 experiment outputs
+├── results/                       # Current experiment outputs
 └── tests/                         # Unit tests
 ```
 
-## Experiment Progress
+## Experiment Progress (Mamba1, archived in `results_mamba1/`)
 
 ### Experiment 0: Training & Phase Diagram
 
@@ -36,10 +41,10 @@ Mamba is trained on 15 anchor pairs with a special pair (3,4) whose label is man
 | Done | Best model training | 7 layers, gamma=1.0, seed=42, 200 epochs |
 | Done | Phase diagram (L2) | 12 gamma values (0.1-2.0) |
 | Done | Phase diagram (L3) | 12 gamma values (0.1-2.0) |
-| Partial | Phase diagram (L4) | 5/12 gamma values (0.1-0.5) |
+| Done | Phase diagram (L4) | 9/12 gamma values (0.1-0.9) |
 | Not started | Phase diagram (L5-L7) | 0/36 configurations |
 
-**Phase diagram completion: 29/72 configurations (40%)**
+**Phase diagram completion: 33/72 configurations (46%)**
 
 #### Best Model Results (L=7, gamma=1.0)
 
@@ -51,19 +56,20 @@ Mamba is trained on 15 anchor pairs with a special pair (3,4) whose label is man
 
 The model strongly prefers the compositional solution over the symmetric bias.
 
-### Experiment 1: Information Blocking
+### Experiment 1: Mechanistic Interpretability
 
 | Status | Task | Details |
 |--------|------|---------|
-| Done | SSM state blocking | All anchor pairs tested |
+| Done | Information blocking (1a) | Mean match rate 64.8%, confirming Conv1d carries positional info |
+| Done | Information substitution (1b) | Mean collapse rate 88.3%, confirming Conv1d encodes all task info |
 
-Blocking SSM state from key/anchor positions yields a **mean match rate of 64.8%** (range: 60.8%-68.3%), confirming that Conv1d — not the SSM — is the primary carrier of positional information.
+### Experiment 2: Ablation Studies
 
-### Experiment 2: Substitution
-
-| Status | Task |
-|--------|------|
-| Not started | Conv1d substitution experiment |
+| Status | Task | Details |
+|--------|------|---------|
+| Done | All-one convolution (2b) | Freezing Conv1d weights to 1 |
+| Done | Positional encoding (2c) | Adding positional encoding |
+| Done | Conv1d cosine similarity (2d) | Cosine similarity heatmap |
 
 ## Model Architecture
 

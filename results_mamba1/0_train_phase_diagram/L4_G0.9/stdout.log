@@ -53,3 +53,50 @@ Epoch 43/200 | Loss: nan | LR: 0.000234
 Epoch 44/200 | Loss: nan | LR: 0.000233
 Epoch 45/200 | Loss: nan | LR: 0.000232
 Epoch 46/200 | Loss: nan | LR: 0.000230
+Epoch 47/200 | Loss: nan | LR: 0.000229
+Epoch 48/200 | Loss: nan | LR: 0.000228
+Epoch 49/200 | Loss: nan | LR: 0.000227
+Epoch 50/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000226
+Epoch 51/200 | Loss: nan | LR: 0.000225
+Epoch 52/200 | Loss: nan | LR: 0.000223
+Epoch 53/200 | Loss: nan | LR: 0.000222
+Epoch 54/200 | Loss: nan | LR: 0.000221
+Epoch 55/200 | Loss: nan | LR: 0.000220
+Epoch 56/200 | Loss: nan | LR: 0.000218
+Epoch 57/200 | Loss: nan | LR: 0.000217
+Epoch 58/200 | Loss: nan | LR: 0.000216
+Epoch 59/200 | Loss: nan | LR: 0.000214
+Epoch 60/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000213
+Epoch 61/200 | Loss: nan | LR: 0.000211
+Epoch 62/200 | Loss: nan | LR: 0.000210
+Epoch 63/200 | Loss: nan | LR: 0.000208
+Epoch 64/200 | Loss: nan | LR: 0.000207
+Epoch 65/200 | Loss: nan | LR: 0.000205
+Epoch 66/200 | Loss: nan | LR: 0.000204
+Epoch 67/200 | Loss: nan | LR: 0.000202
+Epoch 68/200 | Loss: nan | LR: 0.000201
+Epoch 69/200 | Loss: nan | LR: 0.000199
+Epoch 70/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000197
+Epoch 71/200 | Loss: nan | LR: 0.000196
+Epoch 72/200 | Loss: nan | LR: 0.000194
+Epoch 73/200 | Loss: nan | LR: 0.000192
+Epoch 74/200 | Loss: nan | LR: 0.000191
+Epoch 75/200 | Loss: nan | LR: 0.000189
+Epoch 76/200 | Loss: nan | LR: 0.000187
+Epoch 77/200 | Loss: nan | LR: 0.000185
+Epoch 78/200 | Loss: nan | LR: 0.000184
+Epoch 79/200 | Loss: nan | LR: 0.000182
+Epoch 80/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000180
+Epoch 81/200 | Loss: nan | LR: 0.000178
+Epoch 82/200 | Loss: nan | LR: 0.000176
+Epoch 83/200 | Loss: nan | LR: 0.000175
+Epoch 84/200 | Loss: nan | LR: 0.000173
+Epoch 85/200 | Loss: nan | LR: 0.000171
+Epoch 86/200 | Loss: nan | LR: 0.000169
+Epoch 87/200 | Loss: nan | LR: 0.000167
+Epoch 88/200 | Loss: nan | LR: 0.000165
+Epoch 89/200 | Loss: nan | LR: 0.000163
+Epoch 90/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000161
+Epoch 91/200 | Loss: nan | LR: 0.000159
+Epoch 92/200 | Loss: nan | LR: 0.000158
+Epoch 93/200 | Loss: nan | LR: 0.000156

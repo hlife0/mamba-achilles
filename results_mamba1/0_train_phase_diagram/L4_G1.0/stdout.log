@@ -1,0 +1,16 @@
+Configuration saved to results/0_train_phase_diagram/L4_G1.0/config.json
+Using device: cuda
+Creating datasets...
+Train dataset size: 300000
+Eval dataset size: 1800
+Creating model: MambaForComposite
+Model parameters: 67,628
+
+Starting training for 200 epochs...
+Epoch 1/200 | Loss: 4.6066 | LR: 0.000010
+Epoch 2/200 | Loss: 4.5981 | LR: 0.000034
+Epoch 3/200 | Loss: nan | LR: 0.000058
+Epoch 4/200 | Loss: nan | LR: 0.000082
+Epoch 5/200 | Loss: nan | LR: 0.000106
+Epoch 6/200 | Loss: nan | LR: 0.000130
+Epoch 7/200 | Loss: nan | LR: 0.000154

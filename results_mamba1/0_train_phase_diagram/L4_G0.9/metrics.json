@@ -2,7 +2,7 @@
     "n_layers": 4,
     "gamma": 0.9,
     "seed": 42,
-    "current_epoch": 40,
+    "current_epoch": 90,
     "total_epochs": 200,
     "current_train_loss": NaN,
     "current_composite_acc": 0.0,
