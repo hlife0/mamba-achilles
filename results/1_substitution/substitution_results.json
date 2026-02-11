@@ -1,0 +1,93 @@
+{
+    "checkpoint": "results/0_train_paper_best/model_best_comp.pt",
+    "config": {
+        "n_layers": 7,
+        "gamma": 1.0,
+        "d_model": 32,
+        "d_state": 128,
+        "d_conv": 4,
+        "vocab_size": 100,
+        "seed": 42,
+        "batch_size": 2048,
+        "epochs": 200,
+        "initial_lr": 1e-05,
+        "warmup_target_lr": 0.00025,
+        "warmup_epochs": 10,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1.0,
+        "num_train_samples": 300000,
+        "num_eval_samples": 1800,
+        "output_dir": "results/0_train_paper_best",
+        "log_interval": 10,
+        "device": "cuda"
+    },
+    "num_samples_per_pair": 480,
+    "seed": 42,
+    "results": {
+        "11": {
+            "collapse_rate": 0.8312500715255737,
+            "num_samples": 480
+        },
+        "12": {
+            "collapse_rate": 0.8541666865348816,
+            "num_samples": 480
+        },
+        "13": {
+            "collapse_rate": 1.0,
+            "num_samples": 480
+        },
+        "14": {
+            "collapse_rate": 0.8312500715255737,
+            "num_samples": 480
+        },
+        "21": {
+            "collapse_rate": 0.8395833969116211,
+            "num_samples": 480
+        },
+        "22": {
+            "collapse_rate": 0.8520833849906921,
+            "num_samples": 480
+        },
+        "23": {
+            "collapse_rate": 1.0,
+            "num_samples": 480
+        },
+        "24": {
+            "collapse_rate": 0.8312500715255737,
+            "num_samples": 480
+        },
+        "31": {
+            "collapse_rate": 0.9000000357627869,
+            "num_samples": 480
+        },
+        "32": {
+            "collapse_rate": 0.8354167342185974,
+            "num_samples": 480
+        },
+        "33": {
+            "collapse_rate": 1.0,
+            "num_samples": 480
+        },
+        "34": {
+            "collapse_rate": 0.8375000357627869,
+            "num_samples": 480
+        },
+        "41": {
+            "collapse_rate": 0.8145833611488342,
+            "num_samples": 480
+        },
+        "42": {
+            "collapse_rate": 0.8500000238418579,
+            "num_samples": 480
+        },
+        "43": {
+            "collapse_rate": 1.0,
+            "num_samples": 480
+        },
+        "44": {
+            "collapse_rate": 0.8583333492279053,
+            "num_samples": 480
+        }
+    },
+    "mean_collapse_rate": 0.8834635764360428
+}
