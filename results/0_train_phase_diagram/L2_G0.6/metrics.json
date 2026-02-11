@@ -1,0 +1,15 @@
+{
+    "n_layers": 2,
+    "gamma": 0.6,
+    "seed": 42,
+    "current_epoch": 200,
+    "total_epochs": 200,
+    "current_train_loss": 0.000611601504109179,
+    "current_composite_acc": 0.21555555555555556,
+    "current_symmetric_acc": 0.027777777777777776,
+    "best_composite_acc": 0.3288888888888889,
+    "best_composite_epoch": 20,
+    "best_symmetric_acc": 0.13166666666666665,
+    "best_symmetric_epoch": 10,
+    "early_stopped": false
+}

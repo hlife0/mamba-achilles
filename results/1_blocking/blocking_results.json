@@ -1,0 +1,93 @@
+{
+    "checkpoint": "results/0_train_paper_best/model_best_comp.pt",
+    "config": {
+        "n_layers": 7,
+        "gamma": 1.0,
+        "d_model": 32,
+        "d_state": 128,
+        "d_conv": 4,
+        "vocab_size": 100,
+        "seed": 42,
+        "batch_size": 2048,
+        "epochs": 200,
+        "initial_lr": 1e-05,
+        "warmup_target_lr": 0.00025,
+        "warmup_epochs": 10,
+        "weight_decay": 0.01,
+        "gradient_clip_norm": 1.0,
+        "num_train_samples": 300000,
+        "num_eval_samples": 1800,
+        "output_dir": "results/0_train_paper_best",
+        "log_interval": 10,
+        "device": "cuda"
+    },
+    "num_samples_per_pair": 480,
+    "seed": 42,
+    "results": {
+        "11": {
+            "match_rate": 0.6083333492279053,
+            "num_samples": 480
+        },
+        "12": {
+            "match_rate": 0.6458333730697632,
+            "num_samples": 480
+        },
+        "13": {
+            "match_rate": 0.6666666865348816,
+            "num_samples": 480
+        },
+        "14": {
+            "match_rate": 0.6520833969116211,
+            "num_samples": 480
+        },
+        "21": {
+            "match_rate": 0.6354166865348816,
+            "num_samples": 480
+        },
+        "22": {
+            "match_rate": 0.6229166984558105,
+            "num_samples": 480
+        },
+        "23": {
+            "match_rate": 0.6375000476837158,
+            "num_samples": 480
+        },
+        "24": {
+            "match_rate": 0.6375000476837158,
+            "num_samples": 480
+        },
+        "31": {
+            "match_rate": 0.6312500238418579,
+            "num_samples": 480
+        },
+        "32": {
+            "match_rate": 0.6291667222976685,
+            "num_samples": 480
+        },
+        "33": {
+            "match_rate": 0.6833333969116211,
+            "num_samples": 480
+        },
+        "34": {
+            "match_rate": 0.6583333611488342,
+            "num_samples": 480
+        },
+        "41": {
+            "match_rate": 0.6333333849906921,
+            "num_samples": 480
+        },
+        "42": {
+            "match_rate": 0.6729167103767395,
+            "num_samples": 480
+        },
+        "43": {
+            "match_rate": 0.6729167103767395,
+            "num_samples": 480
+        },
+        "44": {
+            "match_rate": 0.6791666746139526,
+            "num_samples": 480
+        }
+    },
+    "mean_match_rate": 0.647916704416275
+}

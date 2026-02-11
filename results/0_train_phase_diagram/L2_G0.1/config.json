@@ -1,0 +1,21 @@
+{
+    "n_layers": 2,
+    "gamma": 0.1,
+    "d_model": 32,
+    "d_state": 128,
+    "d_conv": 4,
+    "vocab_size": 100,
+    "seed": 42,
+    "batch_size": 2048,
+    "epochs": 200,
+    "initial_lr": 1e-05,
+    "warmup_target_lr": 0.00025,
+    "warmup_epochs": 10,
+    "weight_decay": 0.01,
+    "gradient_clip_norm": 1.0,
+    "num_train_samples": 300000,
+    "num_eval_samples": 1800,
+    "output_dir": "results/0_train_phase_diagram/L2_G0.1",
+    "log_interval": 10,
+    "device": "cuda"
+}

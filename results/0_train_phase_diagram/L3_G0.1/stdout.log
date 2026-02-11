@@ -1,0 +1,216 @@
+Configuration saved to results/0_train_phase_diagram/L3_G0.1/config.json
+Using device: cuda
+Creating datasets...
+Train dataset size: 300000
+Eval dataset size: 1800
+Creating model: MambaForComposite
+Model parameters: 97,728
+
+Starting training for 200 epochs...
+Epoch 1/200 | Loss: 9.6420 | LR: 0.000010
+Epoch 2/200 | Loss: 9.5847 | LR: 0.000034
+Epoch 3/200 | Loss: 9.4728 | LR: 0.000058
+Epoch 4/200 | Loss: 9.3225 | LR: 0.000082
+Epoch 5/200 | Loss: 9.1179 | LR: 0.000106
+Epoch 6/200 | Loss: 8.8697 | LR: 0.000130
+Epoch 7/200 | Loss: 8.5865 | LR: 0.000154
+Epoch 8/200 | Loss: 8.2425 | LR: 0.000178
+Epoch 9/200 | Loss: 7.7918 | LR: 0.000202
+Epoch 10/200 | Loss: 7.2331 | Comp Acc: 0.0111 (best: 0.0111@10) | Sym Acc: 0.0039 (best: 0.0039@10) | LR: 0.000226
+Epoch 11/200 | Loss: 6.6678 | LR: 0.000250
+Epoch 12/200 | Loss: 6.1668 | LR: 0.000250
+Epoch 13/200 | Loss: 5.7540 | LR: 0.000250
+Epoch 14/200 | Loss: 5.4201 | LR: 0.000250
+Epoch 15/200 | Loss: 5.1389 | LR: 0.000250
+Epoch 16/200 | Loss: 4.9069 | LR: 0.000250
+Epoch 17/200 | Loss: 4.7437 | LR: 0.000249
+Epoch 18/200 | Loss: 4.6437 | LR: 0.000249
+Epoch 19/200 | Loss: 4.5896 | LR: 0.000249
+Epoch 20/200 | Loss: 4.5612 | Comp Acc: 0.0133 (best: 0.0133@20) | Sym Acc: 0.0156 (best: 0.0156@20) | LR: 0.000249
+Epoch 21/200 | Loss: 4.5437 | LR: 0.000248
+Epoch 22/200 | Loss: 4.5329 | LR: 0.000248
+Epoch 23/200 | Loss: 4.5261 | LR: 0.000248
+Epoch 24/200 | Loss: 4.5218 | LR: 0.000247
+Epoch 25/200 | Loss: 4.5189 | LR: 0.000247
+Epoch 26/200 | Loss: 4.5169 | LR: 0.000246
+Epoch 27/200 | Loss: 4.5156 | LR: 0.000246
+Epoch 28/200 | Loss: 4.5148 | LR: 0.000245
+Epoch 29/200 | Loss: 4.5142 | LR: 0.000245
+Epoch 30/200 | Loss: 4.5135 | Comp Acc: 0.0128 (best: 0.0133@20) | Sym Acc: 0.0067 (best: 0.0156@20) | LR: 0.000244
+Epoch 31/200 | Loss: 4.5129 | LR: 0.000243
+Epoch 32/200 | Loss: 4.5123 | LR: 0.000243
+Epoch 33/200 | Loss: 4.5119 | LR: 0.000242
+Epoch 34/200 | Loss: 4.5120 | LR: 0.000241
+Epoch 35/200 | Loss: 4.5115 | LR: 0.000241
+Epoch 36/200 | Loss: 4.5111 | LR: 0.000240
+Epoch 37/200 | Loss: 4.5107 | LR: 0.000239
+Epoch 38/200 | Loss: 4.5104 | LR: 0.000238
+Epoch 39/200 | Loss: 4.5102 | LR: 0.000237
+Epoch 40/200 | Loss: 4.5104 | Comp Acc: 0.0111 (best: 0.0133@20) | Sym Acc: 0.0039 (best: 0.0156@20) | LR: 0.000236
+Epoch 41/200 | Loss: 4.5100 | LR: 0.000236
+Epoch 42/200 | Loss: 4.5096 | LR: 0.000235
+Epoch 43/200 | Loss: 4.5095 | LR: 0.000234
+Epoch 44/200 | Loss: 4.5092 | LR: 0.000233
+Epoch 45/200 | Loss: 4.5090 | LR: 0.000232
+Epoch 46/200 | Loss: 4.5086 | LR: 0.000230
+Epoch 47/200 | Loss: 4.5083 | LR: 0.000229
+Epoch 48/200 | Loss: 4.5082 | LR: 0.000228
+Epoch 49/200 | Loss: 4.5080 | LR: 0.000227
+Epoch 50/200 | Loss: 4.5081 | Comp Acc: 0.0156 (best: 0.0156@50) | Sym Acc: 0.0061 (best: 0.0156@20) | LR: 0.000226
+Epoch 51/200 | Loss: 4.5078 | LR: 0.000225
+Epoch 52/200 | Loss: 4.5073 | LR: 0.000223
+Epoch 53/200 | Loss: 4.5070 | LR: 0.000222
+Epoch 54/200 | Loss: 4.5066 | LR: 0.000221
+Epoch 55/200 | Loss: 4.5064 | LR: 0.000220
+Epoch 56/200 | Loss: 4.5058 | LR: 0.000218
+Epoch 57/200 | Loss: 4.5056 | LR: 0.000217
+Epoch 58/200 | Loss: 4.5057 | LR: 0.000216
+Epoch 59/200 | Loss: 4.5052 | LR: 0.000214
+Epoch 60/200 | Loss: 4.5050 | Comp Acc: 0.0106 (best: 0.0156@50) | Sym Acc: 0.0078 (best: 0.0156@20) | LR: 0.000213
+Epoch 61/200 | Loss: 4.5049 | LR: 0.000211
+Epoch 62/200 | Loss: 4.5042 | LR: 0.000210
+Epoch 63/200 | Loss: 4.5039 | LR: 0.000208
+Epoch 64/200 | Loss: 4.5041 | LR: 0.000207
+Epoch 65/200 | Loss: 4.5035 | LR: 0.000205
+Epoch 66/200 | Loss: 4.5032 | LR: 0.000204
+Epoch 67/200 | Loss: 4.5027 | LR: 0.000202
+Epoch 68/200 | Loss: 4.5020 | LR: 0.000201
+Epoch 69/200 | Loss: 4.5020 | LR: 0.000199
+Epoch 70/200 | Loss: 4.5013 | Comp Acc: 0.0106 (best: 0.0156@50) | Sym Acc: 0.0100 (best: 0.0156@20) | LR: 0.000197
+Epoch 71/200 | Loss: 4.5011 | LR: 0.000196
+Epoch 72/200 | Loss: 4.5006 | LR: 0.000194
+Epoch 73/200 | Loss: 4.5002 | LR: 0.000192
+Epoch 74/200 | Loss: 4.4998 | LR: 0.000191
+Epoch 75/200 | Loss: 4.4997 | LR: 0.000189
+Epoch 76/200 | Loss: 4.4998 | LR: 0.000187
+Epoch 77/200 | Loss: 4.4991 | LR: 0.000185
+Epoch 78/200 | Loss: 4.4988 | LR: 0.000184
+Epoch 79/200 | Loss: 4.4985 | LR: 0.000182
+Epoch 80/200 | Loss: 4.4979 | Comp Acc: 0.0078 (best: 0.0156@50) | Sym Acc: 0.0089 (best: 0.0156@20) | LR: 0.000180
+Epoch 81/200 | Loss: 4.4974 | LR: 0.000178
+Epoch 82/200 | Loss: 4.4971 | LR: 0.000176
+Epoch 83/200 | Loss: 4.4967 | LR: 0.000175
+Epoch 84/200 | Loss: 4.4961 | LR: 0.000173
+Epoch 85/200 | Loss: 4.4957 | LR: 0.000171
+Epoch 86/200 | Loss: 4.4954 | LR: 0.000169
+Epoch 87/200 | Loss: 4.4952 | LR: 0.000167
+Epoch 88/200 | Loss: 4.4946 | LR: 0.000165
+Epoch 89/200 | Loss: 4.4943 | LR: 0.000163
+Epoch 90/200 | Loss: 4.4939 | Comp Acc: 0.0050 (best: 0.0156@50) | Sym Acc: 0.0122 (best: 0.0156@20) | LR: 0.000161
+Epoch 91/200 | Loss: 4.4936 | LR: 0.000159
+Epoch 92/200 | Loss: 4.4932 | LR: 0.000158
+Epoch 93/200 | Loss: 4.4928 | LR: 0.000156
+Epoch 94/200 | Loss: 4.4922 | LR: 0.000154
+Epoch 95/200 | Loss: 4.4921 | LR: 0.000152
+Epoch 96/200 | Loss: 4.4916 | LR: 0.000150
+Epoch 97/200 | Loss: 4.4915 | LR: 0.000148
+Epoch 98/200 | Loss: 4.4913 | LR: 0.000146
+Epoch 99/200 | Loss: 4.4908 | LR: 0.000144
+Epoch 100/200 | Loss: 4.4904 | Comp Acc: 0.0061 (best: 0.0156@50) | Sym Acc: 0.0100 (best: 0.0156@20) | LR: 0.000142
+Epoch 101/200 | Loss: 4.4897 | LR: 0.000140
+Epoch 102/200 | Loss: 4.4893 | LR: 0.000138
+Epoch 103/200 | Loss: 4.4888 | LR: 0.000136
+Epoch 104/200 | Loss: 4.4885 | LR: 0.000134
+Epoch 105/200 | Loss: 4.4882 | LR: 0.000132
+Epoch 106/200 | Loss: 4.4879 | LR: 0.000130
+Epoch 107/200 | Loss: 4.4873 | LR: 0.000128
+Epoch 108/200 | Loss: 4.4872 | LR: 0.000126
+Epoch 109/200 | Loss: 4.4869 | LR: 0.000124
+Epoch 110/200 | Loss: 4.4865 | Comp Acc: 0.0100 (best: 0.0156@50) | Sym Acc: 0.0117 (best: 0.0156@20) | LR: 0.000122
+Epoch 111/200 | Loss: 4.4865 | LR: 0.000120
+Epoch 112/200 | Loss: 4.4861 | LR: 0.000118
+Epoch 113/200 | Loss: 4.4857 | LR: 0.000116
+Epoch 114/200 | Loss: 4.4851 | LR: 0.000114
+Epoch 115/200 | Loss: 4.4849 | LR: 0.000112
+Epoch 116/200 | Loss: 4.4844 | LR: 0.000110
+Epoch 117/200 | Loss: 4.4840 | LR: 0.000108
+Epoch 118/200 | Loss: 4.4840 | LR: 0.000106
+Epoch 119/200 | Loss: 4.4837 | LR: 0.000104
+Epoch 120/200 | Loss: 4.4834 | Comp Acc: 0.0106 (best: 0.0156@50) | Sym Acc: 0.0128 (best: 0.0156@20) | LR: 0.000102
+Epoch 121/200 | Loss: 4.4829 | LR: 0.000101
+Epoch 122/200 | Loss: 4.4824 | LR: 0.000099
+Epoch 123/200 | Loss: 4.4822 | LR: 0.000097
+Epoch 124/200 | Loss: 4.4821 | LR: 0.000095
+Epoch 125/200 | Loss: 4.4819 | LR: 0.000093
+Epoch 126/200 | Loss: 4.4814 | LR: 0.000091
+Epoch 127/200 | Loss: 4.4812 | LR: 0.000089
+Epoch 128/200 | Loss: 4.4807 | LR: 0.000087
+Epoch 129/200 | Loss: 4.4805 | LR: 0.000085
+Epoch 130/200 | Loss: 4.4804 | Comp Acc: 0.0089 (best: 0.0156@50) | Sym Acc: 0.0111 (best: 0.0156@20) | LR: 0.000084
+Epoch 131/200 | Loss: 4.4799 | LR: 0.000082
+Epoch 132/200 | Loss: 4.4796 | LR: 0.000080
+Epoch 133/200 | Loss: 4.4793 | LR: 0.000078
+Epoch 134/200 | Loss: 4.4791 | LR: 0.000076
+Epoch 135/200 | Loss: 4.4790 | LR: 0.000075
+Epoch 136/200 | Loss: 4.4786 | LR: 0.000073
+Epoch 137/200 | Loss: 4.4785 | LR: 0.000071
+Epoch 138/200 | Loss: 4.4780 | LR: 0.000069
+Epoch 139/200 | Loss: 4.4778 | LR: 0.000068
+Epoch 140/200 | Loss: 4.4774 | Comp Acc: 0.0100 (best: 0.0156@50) | Sym Acc: 0.0122 (best: 0.0156@20) | LR: 0.000066
+Epoch 141/200 | Loss: 4.4771 | LR: 0.000064
+Epoch 142/200 | Loss: 4.4771 | LR: 0.000063
+Epoch 143/200 | Loss: 4.4768 | LR: 0.000061
+Epoch 144/200 | Loss: 4.4765 | LR: 0.000059
+Epoch 145/200 | Loss: 4.4762 | LR: 0.000058
+Epoch 146/200 | Loss: 4.4760 | LR: 0.000056
+Epoch 147/200 | Loss: 4.4757 | LR: 0.000055
+Epoch 148/200 | Loss: 4.4755 | LR: 0.000053
+Epoch 149/200 | Loss: 4.4752 | LR: 0.000052
+Epoch 150/200 | Loss: 4.4750 | Comp Acc: 0.0100 (best: 0.0156@50) | Sym Acc: 0.0117 (best: 0.0156@20) | LR: 0.000050
+Epoch 151/200 | Loss: 4.4747 | LR: 0.000049
+Epoch 152/200 | Loss: 4.4745 | LR: 0.000047
+Epoch 153/200 | Loss: 4.4742 | LR: 0.000046
+Epoch 154/200 | Loss: 4.4741 | LR: 0.000044
+Epoch 155/200 | Loss: 4.4739 | LR: 0.000043
+Epoch 156/200 | Loss: 4.4737 | LR: 0.000042
+Epoch 157/200 | Loss: 4.4735 | LR: 0.000040
+Epoch 158/200 | Loss: 4.4733 | LR: 0.000039
+Epoch 159/200 | Loss: 4.4733 | LR: 0.000038
+Epoch 160/200 | Loss: 4.4731 | Comp Acc: 0.0111 (best: 0.0156@50) | Sym Acc: 0.0111 (best: 0.0156@20) | LR: 0.000037
+Epoch 161/200 | Loss: 4.4728 | LR: 0.000035
+Epoch 162/200 | Loss: 4.4727 | LR: 0.000034
+Epoch 163/200 | Loss: 4.4725 | LR: 0.000033
+Epoch 164/200 | Loss: 4.4723 | LR: 0.000032
+Epoch 165/200 | Loss: 4.4722 | LR: 0.000031
+Epoch 166/200 | Loss: 4.4720 | LR: 0.000030
+Epoch 167/200 | Loss: 4.4718 | LR: 0.000028
+Epoch 168/200 | Loss: 4.4717 | LR: 0.000027
+Epoch 169/200 | Loss: 4.4715 | LR: 0.000026
+Epoch 170/200 | Loss: 4.4713 | Comp Acc: 0.0117 (best: 0.0156@50) | Sym Acc: 0.0117 (best: 0.0156@20) | LR: 0.000025
+Epoch 171/200 | Loss: 4.4710 | LR: 0.000024
+Epoch 172/200 | Loss: 4.4710 | LR: 0.000024
+Epoch 173/200 | Loss: 4.4710 | LR: 0.000023
+Epoch 174/200 | Loss: 4.4707 | LR: 0.000022
+Epoch 175/200 | Loss: 4.4706 | LR: 0.000021
+Epoch 176/200 | Loss: 4.4705 | LR: 0.000020
+Epoch 177/200 | Loss: 4.4704 | LR: 0.000019
+Epoch 178/200 | Loss: 4.4703 | LR: 0.000019
+Epoch 179/200 | Loss: 4.4701 | LR: 0.000018
+Epoch 180/200 | Loss: 4.4700 | Comp Acc: 0.0117 (best: 0.0156@50) | Sym Acc: 0.0117 (best: 0.0156@20) | LR: 0.000017
+Epoch 181/200 | Loss: 4.4698 | LR: 0.000017
+Epoch 182/200 | Loss: 4.4698 | LR: 0.000016
+Epoch 183/200 | Loss: 4.4697 | LR: 0.000015
+Epoch 184/200 | Loss: 4.4697 | LR: 0.000015
+Epoch 185/200 | Loss: 4.4696 | LR: 0.000014
+Epoch 186/200 | Loss: 4.4694 | LR: 0.000014
+Epoch 187/200 | Loss: 4.4693 | LR: 0.000013
+Epoch 188/200 | Loss: 4.4693 | LR: 0.000013
+Epoch 189/200 | Loss: 4.4692 | LR: 0.000012
+Epoch 190/200 | Loss: 4.4692 | Comp Acc: 0.0128 (best: 0.0156@50) | Sym Acc: 0.0111 (best: 0.0156@20) | LR: 0.000012
+Epoch 191/200 | Loss: 4.4690 | LR: 0.000012
+Epoch 192/200 | Loss: 4.4690 | LR: 0.000011
+Epoch 193/200 | Loss: 4.4689 | LR: 0.000011
+Epoch 194/200 | Loss: 4.4688 | LR: 0.000011
+Epoch 195/200 | Loss: 4.4688 | LR: 0.000011
+Epoch 196/200 | Loss: 4.4687 | LR: 0.000010
+Epoch 197/200 | Loss: 4.4687 | LR: 0.000010
+Epoch 198/200 | Loss: 4.4686 | LR: 0.000010
+Epoch 199/200 | Loss: 4.4686 | LR: 0.000010
+Epoch 200/200 | Loss: 4.4685 | Comp Acc: 0.0133 (best: 0.0156@50) | Sym Acc: 0.0117 (best: 0.0156@20) | LR: 0.000010
+
+Training finished at epoch 200.
+Best Composite Accuracy: 0.0156 (epoch 50)
+Best Symmetric Accuracy: 0.0156 (epoch 20)
+Metrics saved to results/0_train_phase_diagram/L3_G0.1/metrics.json
+
+Training completed successfully!

@@ -1,0 +1,1288 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2025
+
+
+% ready for submission
+% \usepackage{neurips_2025}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath} 
+\usepackage{bm}
+\usepackage{subcaption}  
+\usepackage{tcolorbox}
+\usepackage{mlmath}
+\usepackage{ulem}
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+% \usepackage[preprint]{neurips_2025}
+
+
+% \fancyfoot[C]{\small Accepted as a Spotlight at NeurIPS 2025}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+    \usepackage[final]{neurips_2025}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2025}
+\makeatletter
+\renewcommand{\@notice}{} % suppress the first-page notice box
+\makeatother
+
+
+% —— 定义一个简洁的 remark 宏 —— 
+\newcommand{\spotlightremark}{%
+  \begingroup
+  \vspace{-0.6em}
+  \begin{center}\normalsize\emph{Accepted as a Spotlight at NeurIPS 2025}\end{center}
+  \vspace{-0.8em}
+  \endgroup
+}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{
+fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+% \captionsetup{justification=centering}
+\title{Achilles' Heel of Mamba: Essential difficulties of the Mamba architecture demonstrated by synthetic data}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Tianyi Chen\textsuperscript{\rm 1,2}\thanks{Equal contribution.},
+  Pengxiao Lin\textsuperscript{\rm 1,2}\footnotemark[1],
+  Zhiwei Wang\textsuperscript{\rm 1,2},
+  Zhi-Qin John Xu\textsuperscript{\rm 1,2,3}\thanks{Corresponding author: xuzhiqin@sjtu.edu.cn.
+  % Accepted as a Spotlight at NeurIPS 2025
+  }\\
+    \textsuperscript{\rm
+ 1} Institute of Natural Sciences, MOE-LSC, Shanghai Jiao Tong University\\
+    \textsuperscript{\rm 2}  School of Mathematical Sciences, Shanghai Jiao Tong University\\
+    \textsuperscript{\rm 3} Shanghai Seres Information Technology Co., Ltd, Shanghai 200040, China\\
+    % \texttt{hippo@cs.cranberry-lemon.edu}
+  % \texttt{hippo@cs.cranberry-lemon.edu} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+
+\begin{abstract}
+State Space Models (SSMs) have emerged as promising alternatives to attention mechanisms, with the Mamba architecture demonstrating impressive performance and linear complexity for processing long sequences. However, the fundamental differences between Mamba and Transformer architectures remain incompletely understood. In this work, we use carefully designed synthetic tasks to reveal Mamba's inherent limitations. Through experiments, we identify that Mamba's nonlinear convolution introduces an asymmetry bias that significantly impairs its ability to recognize symmetrical patterns and relationships. Using composite function and inverse sequence matching tasks, we demonstrate that Mamba strongly favors compositional solutions over symmetrical ones and struggles with tasks requiring the matching of reversed sequences. We show these limitations stem not from the SSM module itself but from the nonlinear convolution preceding it, which fuses token information asymmetrically. These insights provide a new understanding of Mamba's constraints and suggest concrete architectural improvements for future sequence models.
+
+\end{abstract}
+
+\section{Introduction}
+Large Language Models (LLMs) have achieved remarkable progress and are now widely applied across a broad range of fields \citep{vaswani2017attention, liu2018generating, devlin2018bert, radford2019language, touvron2023llama, openai2023gpt4, brown2020language, dong2022survey, garg2022can, trinh2024solving, davies2021advancing}. The performance and inductive biases of such models are largely determined by their underlying architectures. Among these, the Transformer \citep{vaswani2017attention} has become a dominant backbone in LLMs. Its attention mechanism is central to its strong performance \citep{brown2020language, olsson2022context, wang2024buffer}. However, this mechanism also represents one of its major limitations: the computational complexity of attention scales quadratically with sequence length, making Transformers inefficient for long-sequence tasks.
+
+To address this issue, various Transformer variants have been proposed to reduce the computational cost of attention, including sparse attention \citep{child2019generating} and linear attention mechanisms \citep{katharopoulos2020transformers}. Mamba \citep{gu2023mamba,dao2024transformers}, which incorporates State Space Model (SSM), has recently garnered significant attention due to its linear complexity with respect to sequence length and its superior performance on long-sequence problems. As a result, SSM offering a natural, computation-efficient alternative similar to linear attention have become a focal point of research.
+
+To better understand the behavior of large-scale models and to guide meaningful architectural improvements, it is crucial to investigate the underlying causes of the differences between Mamba and Transformer. Given the inherent complexity of natural language tasks, this study leverages simple but meticulously crafted synthetic data.
+
+When examining architectural details more closely, is the difference between Mamba and Transformer limited merely to the replacement of attention with State Space Models (SSMs)? In fact, beyond the use of SSMs, Mamba exhibits several fundamental differences from the Transformer architecture. One of the most critical distinctions lies in Mamba`s use of nonlinear convolution \citep{o2015introduction}.
+On one hand, the nonlinear convolution enables Mamba to propagate information within a sequence without relying solely on the SSM unlike Transformer, where Transformer depends entirely on attention for intra-sequence communication. On the other hand, this convolution fuses token-level information within the sequence, and the SSM operates on this fused representation to perform matching and extraction. 
+
+Notably, the nonlinear convolution in Mamba introduces an intrinsic asymmetry due to the asymmetric structure of convolution kernels. This asymmetry is transferred to the fused token representations and consequently affects how information is extracted. To better understand this limitation, we devised a composite function task \citep{zhang2024anchor,zhang2024initialization,zhang2025complexity} aimed at evaluating how Mamba handles compositional structures. 
+
+The composite function task admits two possible solutions: a composite solution and a symmetric solution. We observe that Mamba exhibits a strong bias toward the composite solution while struggling to learn the symmetric one. 
+% We found that Mamba struggles to match token sets with different orders-for example, matching ``1234'' with ``4321''.
+We find that Mamba struggles to match sequences under order changes--—for example, "1234" vs. "4321".
+To test this limitation, we designed a inverse sequence matching task, where the model must match a sequence with its reversed counterpart.
+% (e.g., matching “1234” with “4321”). 
+Experimental results confirm that Mamba has difficulty completing this task, whereas Transformer handles it with ease.
+We further introduced a residual connection, complemented by positional encoding, allowing the SSM to directly handle data without relying on convolution. This modification led to a significant improvement in Mamba’s performance on the inverse sequence matching task, confirming that the core issue lies not within the SSM itself, but rather in the nonlinear convolution outside the SSM. This work therefore provides a new angle of symmetry to understand fundamental mechanisms of Mamba structure.
+
+The main contributions of this work are as follows:
+\begin{enumerate}
+    \item We conduct an in-depth analysis of how Mamba solves the composite function task, revealing a fundamental difference in information acquisition between Mamba and Transformer. We show that Mamba tends to rely on convolution to retrieve relevant information.
+    \item Through systematic experiments and observations, we identify Mamba`s bias toward asymmetric solutions in the composite function task. We demonstrate that this behavior distinguishes Mamba from Transformer and trace the root cause to the asymmetry introduced by convolution.
+    \item To further examine this asymmetry bias, we design an inverse sequence matching task, in which Mamba exhibits clear difficulties. We show that these difficulties can be effectively addressed through targeted modifications inspired by our earlier findings, leading to substantial performance improvements.
+    \item By highlighting how nonlinear convolution-based fusion induces an inherent asymmetry in Mamba, we provide insightful guidance for future model improvements and the design of new architectures.
+\end{enumerate}
+ 
+
+\section{Related work}
+
+\textbf{State Space Models (SSM), Mamba, and Their Shortcomings.}
+State space models (SSM) originate from neuromorphic spiking models \citep{voelker2019dynamical, voelker2019legendre} and have gained prominence through several key developments, such as S4 \citep{gu2022efficiently}, S5 \citep{smith2023simplified}, the RWKV series \citep{rwkv45, RWKV6}, RetNet \citep{sun2023retentivenetworksuccessortransformer}, and GLA \citep{pmlr-v235-yang24ab}. Among these, Mamba2 \citep{gu2023mamba} stands out by delivering performance competitive with Transformers while requiring significantly lower computational resources. However, numerous studies reveal that Mamba has notable limitations. Research including \citep{ben-kish2025decimamba, ye2025longmamba, yuan2025remambaequipmambaeffective} indicates that Mamba generally underperforms compared to Transformers in tasks involving long-context understanding, prompting the development of alternative models like DeciMamba, LongMamba, and ReMamba. Similarly, \citep{park2024can, waleffe2024empiricalstudymambabasedlanguage} explore Mamba’s in-context learning abilities and conclude that they fall short of Transformer capabilities. Additionally, \citep{arora2023zoologymeasuringimprovingrecall, jelassi2024repeatmetransformersbetter} demonstrate that Mamba struggles with retrieval tasks, such as copying information from the input context. Some studies, such as \citep{xu2025statespacemodelsstrong}, also examine the practical efficiency of Mamba compared to Transformers, noting that despite its theoretical advantages, real-world performance can be lacking. Furthermore, \citep{ren2024mambaenjoyfreelunch} introduces a ‘COPY’ task, which exposes a performance bottleneck in Mamba. 
+Our study takes a structural view of Mamba, employing carefully designed synthetic data to explore its behavior from the perspective of symmetry, offering deeper insights into these shortcomings of Mamba and proposing a solution to address them.
+
+
+
+\textbf{Understanding the Mechanism of Neural Network Models.} Our work conducts an in-depth investigation into the internal mechanisms of Mamba. 
+% We draw inspiration from prior studies on the attention mechanism in Transformers \citep{voita2019analyzing, vig2019multiscale, kovaleva2019revealing, kobayashi2020attention}. 
+In identifying the functional roles of key modules in Mamba presented in this paper, we adopt the commonly used techniques of perturbation and causal intervention similar to research on interpretability in large language models \citep{vig2020investigating, jeoung2022changed, wang2022interpretability, conmy2023towards, merullo2023circuit, guo2023transformers, wang2024understanding, amsel2024benefits, li2024chain, wang2024understanding1}. The construction of synthetic datasets in our study is primarily inspired by the works of \citet{poli2024mechanistic} and \citet{zhang2024anchor}. The design of our composite function tasks is adopted from the approach used in \citet{zhang2024initialization,zhang2024anchor}. Additionally, several insightful theoretical studies on feedforward neural networks have also informed our theoretical analysis. For instance, various works explore the preferences and generalization capabilities of neural networks from perspectives such as regularization, frequency, and dynamics \citep{xu2022overview,xu2025overview, xu2019frequency,wang2024improving, jacot2018neural, jacot2020implicit, arora2019fine, arora2018convergence, wu2023implicit, wang2310theoretical, arora2022understanding, li2021validity, wu2018sgd, zhu2018anisotropic, arora2019exact, ren2024understanding}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Preliminary}
+\subsection{Introduction of Mamba}
+
+% The Mamba block can be divided into three parts: the SSM part, as well as the pre-SSM part and the post-SSM part. 
+The overall structure of Mamba \citep{gu2023mamba,dao2024transformers} is shown in  Fig.~\ref{Mamba_block}. 
+The Mamba block can be divided into three parts: the widely known SSM component, the pre-SSM part, and the post-SSM part. Omitting trivial dimension transformations and setting the batch size to 1 to omit the batch dimension, for a given input 
+$U$ to the block, the internal computation process to obtain the output 
+$O$ can be described as follows:
+
+\paragraph{Pre-SSM}
+
+\begin{align}
+    ( \tilde{U}, Z, dt) &= \textbf{Linear}(U),~~~ U\in R^{(s,d)}, \tilde{U}\in R^{(s,2d+2h)},Z\in R^{(s,2d)}, dt\in R^{(s,N_h)},\\
+    (B, C, X) &= \bm{\sigma}(\textbf{Conv1d}(\tilde{U})),~~~ B\in R^{(s,h)}, C\in R^{(s,h)}, X\in R^{(s,2d)},\\
+    \tilde{X} &= X \circ dt, X \in R^{(N_h, s, 2d/N_h)},
+\end{align}
+\paragraph{SSM}
+
+\begin{align}
+    Mask & = \textbf{F}(A_0, dt),~~~ A_0\in R^{N_h}, Mask\in R^{(N_h, s, s)}, \\
+    I & = \textbf{Repeat}(C B^{\top},N_h)),~~~  I\in R^{(N_h, s, s)},\\
+    S & = Mask\circ I,~~~  S\in R^{(N_h, s, s)},\\
+    Y & = S\tilde{X} + X,~~~ Y\in R^{(N_h, s, 2d/N_h)}, 
+\end{align}
+\paragraph{Post-SSM}
+
+\begin{align}
+    Y_{Norm} & = \textbf{RMS}(Y\circ(\bm{\sigma}(Z))),~~~ Y_{Norm}\in R^{(s, 2d)}, \\
+    O &= \textbf{Linear}(Y_{Norm}),~~~ O \in R^{(s, 2d)}, 
+\end{align}
+
+where $s$ is the sequence length, $d$ is the model's hidden‑state dimension, $h$ is the SSM hidden dimension, $S$ is the SSM matrix, $N_h$ is the number of SSM heads, \textbf{Linear} denotes a linear transformation, $\textbf{Conv1d}$ denotes a one-dimensional convolution, $\boldsymbol{\sigma}$ denotes a nonlinear activation function, $\textbf{F}$ denotes the function that generates the $Mask$, $\textbf{Repeat}$ denotes a dimension replication operation, $\circ$ denotes pointwise multiplication, and $\textbf{RMS}$ denotes RMS normalization.
+
+
+We define the composition of $\bm{\sigma}$ and $\textbf{Conv1d}$ as \textbf{nonlinear convolution} and \textbf{attention score} from token $j$ to token $i$ is given by the $(i,j)$ entry of the SSM matrix $S$ throughout the paper.
+For more comprehensive computational details, please refer to the appendix.
+
+
+\subsection{Difference between Mamba and Transformer
+}
+\begin{figure}[!ht]
+% \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.999\textwidth]{picture/Mamba_cty20251022.png}
+    \caption{Overview of Mamba and Transformer Blocks.
+    The green trapezoids represent linear mappings. "smax" denotes the softmax function, "FNN" stands for feed-forward neural network, and "LN" represents layer normalization. The meanings of variables specific to the Mamba block are explained in the main text. 
+    % Within the attention mechanism, $Q$, $K$, and $V$ can be respectively mapped to $B$, $C$, and $X$ in the SSM framework. 
+    % For additional computational details regarding Mamba, please refer to the appendix.
+    }
+    \label{Mamba_block}
+\end{figure}
+
+By incorporating the SSM module, Mamba circumvents the quadratic complexity of attention in Transformers. While SSM significantly improves computational efficiency, the key difference from attention appears limited to the softmax function and the learnable mask. However, notable distinctions also exist beyond the SSM itself.
+
+Prior to the attention-like SSM, Mamba applies a nonlinear convolution that fuses information, limiting the SSM to operate on already mixed representations.
+Mamba contains a z-gate following SSM, lacks a Feed-Forward Network (FFN), and its preceding nonlinear layer lacks hidden layers.
+
+
+As we will demonstrate, nonlinear convolution is a defining feature of Mamba that underlies its fundamental divergence from the Transformer.
+
+
+
+
+\subsection{Composite function task}
+
+
+\begin{figure}[!ht]
+% \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.888\textwidth]{picture/compostion_task.png}
+    \caption{Illustration of the Composite Function Task.
+    Anchors 1, 2, 3, and 4 (depicted in orange) each represent distinct functions. Among the 16 anchor pairs formed, 14 correspond to composite functions derived directly from the sequential application of the individual anchor functions. The pair "34", highlighted in red, is defined as a different function rather than a direct composition. The pair "43" is intentionally excluded from the training set. The input to each anchor pair function is referred to as the "key" (indicated in green). Label indicates the output of an anchor pair applied to a key.}
+    \label{compostion_task}
+\end{figure}
+
+
+A detailed illustration of the composite function task \citep{zhang2024anchor,zhang2024initialization,zhang2025complexity} is shown in Fig.~\ref{compostion_task}.
+The core idea of the composite function task can be understood with a simple real world analogy. Imagine a row of people indexed by numbers. Let's define two functions:
+$n(x)$: Find the person n positions to the right of person $x$ and 
+$m(x)$: Find the person m positions to the left of person $x$. The composite function $m(n(x))$ means "If you start with person $x$, go n people to their right, and then m people to their left, who do you end up with?"
+
+In the composite function task, each sequence contains two anchors and one key, the remaining elements in the sequence are randomly sampled from the same range as the key. 
+Each anchor is assigned a unique function, and a pair of anchors defines a composite function, with the key (token before anchor pairs) serving as the input. We use the token 1 through 4 as anchors, yielding a total of 16 possible anchor pairs. Among these, 14 composite functions are defined by directly composing the functions associated with the individual anchors. For the anchor pair ``34'', however, we assign a function that deviates from the standard composition of its components.
+
+The objective is to examine how Mamba handles the unseen anchor pair ``43''. Two plausible solutions exist: one is the \textbf{symmetric solution}, which infers the result of ``43'' by symmetry from the result of ``34''; the other is the \textbf{composite solution}, which computes the result by directly composing the functions associated with ``4'' and ``3''.
+
+
+
+In all experiments, the loss is calculated exclusively based on the final token of the sequence and its corresponding label.
+For detailed data and training settings, please refer to the appendix.
+
+
+
+\subsection{Inverse sequence matching task}
+
+
+\begin{figure}[!ht]
+% \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.888\textwidth]{picture/inverse_sequence_task.png}
+    \caption{Illustration of the Inverse Sequence Matching Task.
+    The orange elements denote the generation set, which consists of three distinct numbers randomly selected from the interval [20, 100], as well as all possible permutations thereof. Blue and green indicate selected key sequences from the permutation space, separated by random numbers that do not belong to the generation set. One green key sequence is chosen as the answer sequence. The query sequence (shown in red) is obtained by reversing the answer sequence. The corresponding label identifies the position of the answer sequence. To prevent Mamba from leveraging its nonlinear convolution mechanism to infer answers, we prepend the query sequence with random numbers (outside the generation set) matching the length of Mamba's pure convolutional receptive field.}
+    \label{inverse_sequence_task}
+\end{figure}
+
+To investigate whether Mamba can match token information fused by the nonlinear convolution, we design an inverse sequence matching task. 
+The detailed structure of the task is illustrated in Fig. ~\ref{inverse_sequence_task}.
+The inverse sequence matching task corresponds to real world situations where people search for the symmetrical counterpart of an object or text. 
+It is similar to asking children to find the symmetrical counterpart of a toy and fit them together. 
+This task can test a model's ability to perform symmetry matching. Although it is simple and fundamental, it reflects a core capability of the model.
+
+Each sample is built from a generating set of three distinct numbers (e.g., $\{28,92,37\}$). From its six possible permutations, five are randomly chosen to form key sequences, which are concatenated and separated by a token not in the generating set.
+
+Next, one of the five key sequences is randomly selected, reversed, and appended to the end as the query sequence, separated by non-generating-set tokens so that the query and key sequences would not fuse by convolution. The number of tokens is determined by Mamba's pure convolutional receptive field. For example, in the illustration, six tokens correspond to the pure convolutional receptive field (refers exclusively to how many tokens can be accessed through convolution alone, without invoking the SSM) of a two-layer Mamba ($2\times3=6$). 
+Finally, the label is the position index of the answer sequence, i.e., the unreversed version of the query sequence. 
+
+
+
+\section{Mamba biases composite solution}
+
+In this section, we will empirically show that Mamba is struggling with the symmetric property in composition but biases composite solutions, and analyze the role of nonlinear convolution.
+
+Initialization scale is shown to be critical for a Transformer to learn the composite or symmetric solution \citep{zhang2024initialization,zhang2025complexity}. Therefore, we scan different initialization scales as follows. A parameter $W\in\sR^{d_1\times d_2}$ is initialized as a Gaussian distribution $\fN(0,(1/d_{1}^\gamma)^2)$, where $\gamma$ is called initialization rate \citep{luo2021phase}. 
+
+We scan a Mamba with different layers and with different $\gamma$. As shown in Fig. \ref{phase_Mamba}, where the accuracy is computed by regarding the label as the composite solution in Fig. \ref{phase_Mamba}a or the symmetric solution in Fig. \ref{phase_Mamba}b, for small $\gamma$ (large initialization), the network fails to capture either composite or symmetric solution. The value at each position in the figure is computed as the average of three independent random runs. This is consistent with previous study in Transformer \citep{zhang2024initialization,zhang2025complexity}. For large $\gamma$ (small initialization), the network biases the composite function across almost all cases. 
+
+% \begin{figure}[H]
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{picture/phase_Mamba2.png}
+    \caption{Phase diagram of Mamba on the composite function task.
+    % \\
+    Accuracy (color) for composite function task under different initialization rates (abscissa) and depths (ordinate). The groundtruth for (a) is composite solution and for (b) is symmetric solution. Detailed model configurations and training settings are provided in the appendix.
+    }
+    \label{phase_Mamba}
+\end{figure}
+
+
+\begin{figure}[!ht]
+% \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.888\textwidth]{picture/info_flow.png}
+    \caption{SSM information flow in Mamba for the composite function task.
+    Left: SSM information flow; green crosses indicate pruned connections. Right: (i) SSM input computation; (ii) state replacement after convolution. Flow is computed from $S = Mask\circ C^TB$, with line thickness indicating flow magnitude.
+    Attention score from token $j$ to token $i$ is given by the $(i,j)$ entry of $S$
+    The numbers are the outputs of each layer through the model’s final linear layer and then take the arg‑max of the resulting logits to obtain the corresponding digit.
+    }
+    \label{info_flow}
+\end{figure}
+
+
+
+\subsection{SSM does not function in composite tasks}
+
+It requires information from anchors and key to finish a composition task.
+% When a model needs to finish the composition task, it needs a proper approach to combine the information from anchors and key. 
+Mamba has two potential options: utilizing the convolution or the SSM module. We found that in standard Mamba \citep{dao2024transformers}, convolution plays a critical role while SSM module does not function.
+% Here we will establish that the SSM module is ineffective in this task and convolution is the only choice for Mamba. 
+\paragraph{Information blocking.} The information flow analysis is a useful tool to visualize the information exchange on token level \citep{wang2024buffer}. Since the SSM module has high similarity with the attention, we treat every element in SSM matrix as the ``attention score'' in information flow in Fig.~\ref{info_flow}. The result suggests that, within the SSM, tokens at later positions have little attention to the key and anchor information. In the case of the Transformer, failure to retrieve the required information via attention renders it incapable of solving the composite function task. To further verify that Mamba does not utilize the SSM for information propagation, we applied a causal intervention approach \citep{feng2023language, meng2022locating, vig2020investigating, wang2024grokked}, manually blocking all information flow from the key and both anchors to the downstream tokens. 
+The $(i,j)$ element of $S$ represents how much token $i$ attends to token $j$. If this value is set to $0$, it implies that token $i$ cannot receive information from token $j$ through the SSM. Our blocking mechanism is implemented by zeroing out the specific entries in $S$ corresponding to the connections we wish to block.
+As shown in the Fig.~\ref{sp}, for various anchor pairs, the output after cutting these connections remains nearly identical to the original output, indicating that the SSM plays little role in transmitting this information. 
+
+
+\paragraph{Information substitution.} 
+To further verify that Mamba relies on convolution for information transmission, we conducted an information substitution experiment: if Mamba encodes all necessary information through convolution, then transferring the resulting state to another sequence should enable it to produce the same output as the original.
+% We performed an information substitution experiment: 
+For all sequences with anchor pairs other than `43', as illustrated in Fig.~\ref{info_flow}, we replaced the post-convolution hidden states of the downstream tokens with those from a ``43'' sequence, where all other elements are identical except for the anchor pair.
+% \textcolor{red}{here need more explanation on the replacement. the mechanism behind it is too complicated} 
+As shown in Fig.~\ref{sp}, we found that the outputs of nearly all anchor pairs collapse to the output corresponding to the ``43'' anchor pair. 
+
+Taken together, these two experiments clearly demonstrate that Mamba solves the composite function task primarily by leveraging convolution to extract the necessary information. This lays the groundwork for Mamba's inability to reach symmetric solution.
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{picture/ABshort.png}
+    \caption{Accuracy of each anchor pair under blocking and substitution experiments compared to the original output. Figures (a) and (b) correspond to the blocking and substitution experiments, respectively. The x-axis denotes the anchor pairs, and the y-axis represents accuracy. Each anchor pair is evaluated using 480 randomly generated sequences.}
+    \label{sp}
+\end{figure}
+
+
+
+\subsection{Nonlinear convolution introduces asymmetry}
+
+In this section we will examine that the asymmetry weight in convolution introduces asymmetry between symmetric anchor pairs.
+
+
+We design a  task with fully symmetric setting as follows. The symmetric anchor pairs have the same function but they  do not composite by elementary functions; only function ``43'' is unseen during the training. This leaves the symmetric solution as the only possible one. As shown in the Fig.~\ref{acc_composition}a, we found that standard Mamba can achieve $100\%$ in the test data of ``34'' function and fails to learn ``43'' via symmetric property. Additional experimental results are provided in the appendix.
+
+To better isolate the effect of convolution's asymmetry, we remove this asymmetry by setting all convolutional kernel weights to 1. As shown in the Fig.~\ref{acc_composition}b, once the asymmetry of convolution is eliminated, Mamba biases learning the symmetric solution to fit the composite task. 
+
+This indicates that Mamba's preference for asymmetry stems from the inherent asymmetry of its nonlinear convolution.
+In Mamba, sequence information is fused through a nonlinear convolution operation, which serves as the input to the SSM module. Consider two sequences, $(v_1,v_2,v_3,v_4)$ and its reversed counterpart 
+. For the convolution outputs of the above sequences, we define the final token of the result as follows:
+
+original sequence: $f=c_1 \circ v_1+c_2 \circ v_2+c_3 \circ v_3+c_4 \circ v_4+\beta$,
+
+symmetric sequence: $g=c_1 \circ v_4+c_2 \circ v_3+c_3 \circ v_2+c_4 \circ v_1+\beta$.
+
+If the convolution parameters $c_i$ are not identical($\beta$ is the bias), then $f$ and $g$ will generally differ. This means that even for token sequences that are symmetric in content, their representations after convolution in Mamba can be significantly different. Such a discrepancy illustrates Mamba’s inherent asymmetry, as it fails to preserve the equivalence of symmetric inputs.
+
+The root cause of this asymmetry lies in the non-uniformity of the convolution weights. Since the convolution parameters in Mamba are initialized randomly and trained independently, the $c_i$ values typically remain distinct throughout training. As a result, the convolution operation induces a persistent asymmetry, where different token orders lead to different outputs. We examined the cosine similarity between the individual parameters of the convolution kernel at both the beginning and end of training, and found that they were largely orthogonal to one another, indicating a strong and persistent inconsistency throughout the training process. The detailed results can be found in the appendix.
+
+
+
+
+
+
+
+For a Mamba network with initialization rate $\gamma=0.5$, it cannot learn composite function task by either composite function or symmetric function. We found that if positional encoding is explicitly included, as shown in the Fig.~\ref{acc_composition}c, such Mamba network learns composite task by symmetric function. Therefore, positional encoding is also critical for learning symmetric solution.
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{picture/acc_composition.png}
+    \caption{Test Accuracy across.
+    (a): Fully symmetric setting, i.e., target functions are symmetric but do not composite by elementary functions, standard Mamba with $\gamma=0.5$.
+    (b): Accuracy computed based on groundtruth of composite solution (comp.) and symmetric solution (sym.) for Mamba with all-one convolution (1Conv1d) and standard Mamba (Standard structure) with initialization rate $\gamma=1$.  
+    (c): Similar legend as (b) for Mamba with positional encoding (Pos.) and the standard one but with initialization rate $\gamma=0.5$.
+    Details of the data and training setup can be found in the appendix.}
+    \label{acc_composition}
+\end{figure}
+
+\subsection{Transformer with convolution biases asymmetric solution}
+The empirical analysis in Mamba reveals that the convolution structure is a key component to introduce asymmetry. Imagine if convolution is introduced into the Transformer, does it increase anchor asymmetry and push the model toward learning asymmetric composite solution? 
+We insert a convolution after the input to the Transformer and before the attention module (applying it to $Q$, $K$, and $V$). This is analogous to how Mamba applies nonlinear convolution before the SSM module. For detailed configurations, please refer to the appendix.
+Previous study\citep{zhang2024initialization} has shown that with different $\gamma$, Transformer can learn symmetric solution or composite solution in different regimes. 
+As shown in Fig. \ref{fig:trans_conv}, with convolution component, Transformer either can not generalize for small $\gamma$ or fit data by symmetric solution for relative large $\gamma$. 
+In this case, the Transformer exhibits a similar preference for composite function solutions as Mamba and struggles to learn symmetric solutions.
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{picture/phase_Transformer.png}
+    \caption{Phase Diagram of the Composite Function Task under Different Settings.
+    Accuracy (color) for composite function task under different initialization rates (abscissa) and depths (ordinate).  
+    (a) and (b) show the composite and symmetric solution accuracy of the Transformer after adding nonlinear convolution. 
+    % (c) and (d) present the corresponding accuracy of Mamba after removing the nonlinear convolution.
+    }
+    \label{fig:trans_conv}
+\end{figure}
+
+
+
+\section{Mamba's challenges in the inverse sequence matching task}
+This raises a critical question: Does the change in token order between sequences like 1234 and 4321 make it inherently difficult for Mamba to attend across reversed patterns and discover the correct reverse sequence?
+
+As shown in Fig. \ref{inverse_acc}a, for the standard Mamba network, the training accuracy can easily achieve $100\%$, however, the test accuracy for the case with tokens seen during training or the case with tokens unseen during the training (``OOD''), the network predicts the outcome with a random-guess level. Additional experimental results can be found in the appendix. For Transformer, or a Mamba network that adds a residual connection from the input of convolution to SSM and the position embedding, as shown in Fig. \ref{inverse_acc}b and \ref{inverse_acc}c, the network can accurately predicts test cases. In addition, for the ``OOD'' case, the accuracies of such two cases are also significantly larger than random guess.
+We also conducted additional architectural experiments aimed at mitigating Mamba's asymmetry bias. For details, please refer to the appendix.
+
+
+
+
+
+
+\begin{figure}[!ht]
+    \centering\includegraphics[width=0.999\textwidth]{picture/acc_inverse.png}
+    \caption{Accuracy on the inverse sequence matching task across different model architectures.
+    (a), (b), and (c) show the accuracy of Mamba, Transformer, and the modified Mamba with residual connection, respectively, on the inverse sequence matching task under the same settings. ``OOD'' refers to a set drawn from a distribution outside the training and standard test ranges.}
+    \label{inverse_acc}
+\end{figure}
+
+
+
+
+\section{Conclusion}
+In this work, we leveraged synthetic data to experimentally and systematically analyze the intrinsic properties of the Mamba architecture. Our findings reveal fundamental differences between Mamba and Transformer models, particularly in handling symmetrical patterns and relationships. We identified that Mamba's inherent asymmetry bias stems from its nonlinear convolution mechanism, which fuses token information asymmetrically before passing it to the SSM module. This architectural constraint limits Mamba's ability to recognize symmetrical solutions in composite function tasks and to match reversed sequences.
+These insights provide valuable guidance for designing future sequence models that combine the computational efficiency of SSMs with the flexible pattern recognition capabilities of Transformers.
+
+% By implementing a simple residual connection that bypasses the convolutional layer, we demonstrated significant performance improvements on symmetry-requiring tasks, confirming that the limitation resides not in the SSM itself but in how token information is processed before reaching it. 
+% These insights provide valuable guidance for designing future sequence models that combine the computational efficiency of SSMs with the flexible pattern recognition capabilities of Transformers.
+
+% Our work emphasizes the importance of understanding architectural biases in neural networks and how they influence model capabilities. As sequence modeling architectures continue to evolve, such mechanistic insights will be crucial for developing more versatile and powerful models across diverse application domains. Future research should explore how to best combine the strengths of both approaches while mitigating their respective limitations.
+
+\section{Limitations}
+To enable a precise investigation and clear illustration of Mamba's internal mechanisms and inductive biases, this work employs synthetic data rather than real-world datasets. While the synthetic tasks are designed to capture key characteristics of the Mamba architecture, they may not generalize to the full diversity of real-world data. Moreover, due to the use of synthetic data, the Mamba models used in our experiments are relatively small. Whether the observed biases persist in larger-scale Mamba architectures remains an open question requiring further investigation. Additionally, many existing large-scale models incorporating Mamba do so in conjunction with Transformer components. In such hybrid architectures, it remains to be studied whether Mamba's inductive bias still dominates or is diminished.
+
+% \section*{Acknowledgements}
+% This work is supported by the National Key R\&D Program of China Grant No. 2022YFA1008200, the National Natural Science Foundation of China Grant No. 92270001, 12371511, 12422119, 2025 Key Technology R\&D Program ``New Generation Information Technology'' Project of Shanghai Municipal Science and Technology Commission, and the HPC of School of Mathematical Sciences and the Student Innovation Center, and the Siyuan-1 cluster supported by the Center for High Performance Computing at Shanghai Jiao Tong University, and Key Laboratory of Marine Intelligent Equipment and System (Ministry of Education, P.R. China).
+
+\section*{Acknowledgements}
+This work is supported by the National Key R\&D Program of China Grant No. 2022YFA1008200, the National Natural Science Foundation of China Grant No. 92270001, 12371511, 12422119, 2025 Key Technology R\&D Program ``New Generation Information Technology'' Project of Shanghai Municipal Science and Technology Commission, and the HPC of School of Mathematical Sciences and the Student Innovation Center, and the Siyuan-1 cluster supported by the Center for High Performance Computing at Shanghai Jiao Tong University, and Key Laboratory of Marine Intelligent Equipment and System (Ministry of Education, P.R. China), and SJTU Kunpeng \& Ascend Center of Excellence.
+
+\bibliography{main}
+% \bibliography{example_paper}
+\bibliographystyle{elsarticle-num-names}
+
+
+
+\newpage
+\section*{NeurIPS Paper Checklist}
+
+% %%% BEGIN INSTRUCTIONS %%%
+% The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
+% limit. 
+
+% Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
+% \begin{itemize}
+%     \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
+%     \item Please provide a short (1–2 sentence) justification right after your answer (even for NA). 
+%    % \item {\bf The papers not including the checklist will be desk rejected.}
+% \end{itemize}
+
+% {\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will be asked to also include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
+
+% The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While "\answerYes{}" is generally preferable to "\answerNo{}", it is perfectly acceptable to answer "\answerNo{}" provided a proper justification is given (e.g., "error bars are not reported because it would be too computationally expensive" or "we were unable to find the license for the dataset we used"). In general, answering "\answerNo{}" or "\answerNA{}" is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
+
+% IMPORTANT, please:
+% \begin{itemize}
+%     \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS Paper Checklist"},
+%     \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
+%     \item {\bf Do not modify the questions and only use the provided macros for your answers}.
+% \end{itemize} 
+ 
+
+%%% END INSTRUCTIONS %%%
+
+
+\begin{enumerate}
+
+\item {\bf Claims}
+    \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Yes, our claims clearly reflect the contributions of this work.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the abstract and introduction do not include the claims made in the paper.
+        \item The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers. 
+        \item The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings. 
+        \item It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper. 
+    \end{itemize}
+
+\item {\bf Limitations}
+    \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: We summarize the limitations of this work at the end of the paper.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper. 
+        \item The authors are encouraged to create a separate "Limitations" section in their paper.
+        \item The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.
+        \item The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.
+        \item The authors should reflect on the factors that influence the performance of the approach. For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.
+        \item The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.
+        \item If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.
+        \item While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
+    \end{itemize}
+
+\item {\bf Theory assumptions and proofs}
+    \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work does not present any theoretical results.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not include theoretical results. 
+        \item All the theorems, formulas, and proofs in the paper should be numbered and cross-referenced.
+        \item All assumptions should be clearly stated or referenced in the statement of any theorems.
+        \item The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition. 
+        \item Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.
+        \item Theorems and Lemmas that the proof relies upon should be properly referenced. 
+    \end{itemize}
+
+    \item {\bf Experimental result reproducibility}
+    \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: The dataset design, model architecture, and training configurations are described in detail, ensuring that the results can be reliably reproduced.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not include experiments.
+        \item If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.
+        \item If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable. 
+        \item Depending on the contribution, reproducibility can be accomplished in various ways. For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.
+        \item While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example
+        \begin{enumerate}
+            \item If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm.
+            \item If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully.
+            \item If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset).
+            \item We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility. In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.
+        \end{enumerate}
+    \end{itemize}
+
+
+\item {\bf Open access to data and code}
+    \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: We provide the code necessary to reproduce the experiments in the supplementary material.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that paper does not include experiments requiring code.
+        \item Please see the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+        \item While we encourage the release of code and data, we understand that this might not be possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).
+        \item The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+        \item The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.
+        \item The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.
+        \item At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).
+        \item Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.
+    \end{itemize}
+
+
+\item {\bf Experimental setting/details}
+    \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: We provide a complete description of the training and testing details in the supplementary material.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not include experiments.
+        \item The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.
+        \item The full details can be provided either with the code, in appendix, or as supplemental material.
+    \end{itemize}
+
+\item {\bf Experiment statistical significance}
+    \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Although error bars are not shown, we conducted multiple runs and report averaged results; see Figures 4 and 8.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not include experiments.
+        \item The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.
+        \item The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).
+        \item The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.)
+        \item The assumptions made should be given (e.g., Normally distributed errors).
+        \item It should be clear whether the error bar is the standard deviation or the standard error of the mean.
+        \item It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96\% CI, if the hypothesis of Normality of errors is not verified.
+        \item For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).
+        \item If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.
+    \end{itemize}
+
+\item {\bf Experiments compute resources}
+    \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: The specific computational resources used in our experiments are described in detail in the supplementary material.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not include experiments.
+        \item The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.
+        \item The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute. 
+        \item The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper). 
+    \end{itemize}
+    
+\item {\bf Code of ethics}
+    \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work meets the requirements of NeurIPS Code of Ethics.
+    \item[] Guidelines: 
+    \begin{itemize}
+        \item The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.
+        \item If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.
+        \item The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).
+    \end{itemize}
+
+
+\item {\bf Broader impacts}
+    \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This paper is an experimental study based on observed phenomena and does not have significant societal impact.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that there is no societal impact of the work performed.
+        \item If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.
+        \item Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.
+        \item The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.
+        \item The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.
+        \item If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).
+    \end{itemize}
+    
+\item {\bf Safeguards}
+    \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work is an experimental study based on observed phenomena, and therefore does not require any safeguards.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper poses no such risks.
+        \item Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters. 
+        \item Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.
+        \item We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.
+    \end{itemize}
+
+\item {\bf Licenses for existing assets}
+    \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: All referenced work has been clearly and appropriately cited throughout the paper.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not use existing assets.
+        \item The authors should cite the original paper that produced the code package or dataset.
+        \item The authors should state which version of the asset is used and, if possible, include a URL.
+        \item The name of the license (e.g., CC-BY 4.0) should be included for each asset.
+        \item For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.
+        \item If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, \url{paperswithcode.com/datasets} has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.
+        \item For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.
+        \item If this information is not available online, the authors are encouraged to reach out to the asset's creators.
+    \end{itemize}
+
+\item {\bf New assets}
+    \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work is an experimental and analysis-based study, and therefore does not produce any assets.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not release new assets.
+        \item Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc. 
+        \item The paper should discuss whether and how consent was obtained from people whose asset is used.
+        \item At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.
+    \end{itemize}
+
+\item {\bf Crowdsourcing and research with human subjects}
+    \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? 
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work is an experimental study based on observed phenomena, and therefore does not involve crowdsourcing or human subjects.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
+        \item Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper. 
+        \item According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector. 
+    \end{itemize}
+
+\item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
+    \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: This work is an experimental study based on observed phenomena, and therefore does not involve crowdsourcing or human subjects.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
+        \item Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper. 
+        \item We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution. 
+        \item For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.
+    \end{itemize}
+
+\item {\bf Declaration of LLM usage}
+    \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does not impact the core methodology, scientific rigorousness, or originality of the research, declaration is not required.
+    %this research? 
+    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification:  The LLM is used only for writing, editing, and formatting purposes.
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer NA means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.
+        \item Please refer to our LLM policy (\url{https://neurips.cc/Conferences/2025/LLM}) for what should or should not be described.
+    \end{itemize}
+
+\end{enumerate}
+
+
+
+
+
+\newpage
+\appendix
+% \section{Appendix}
+% The detailed contents of the appendix are provided in the supplementary material.
+\section{Experiments compute resources}
+All experiments were conducted on a server running Ubuntu 22.04.4 LTS. The system is equipped with an Intel Xeon Gold 6133 processor featuring 80 logical cores at 3.0GHz, and 352 GB of RAM. The machine is configured with 8 NVIDIA GeForce RTX 4080 GPUs with 16GB of video memory each.
+\section{Detail of Mamba}
+The following provides a detailed explanation of the internal computations within the Mamba module, beginning with the specification of the corresponding dimensional representations.
+\begin{align*}
+    B &:= \text{Batch size}, \\  
+    S &:= \text{Sequence length}, \\  
+    % V &:= \text{Vocabulary size}, \\  
+    D_{m} &:= \text{dimension of model}, \\  
+    D_{in} &:= \text{dimension of inner model} \\
+    &=expand \times D_{m},\\
+    N &:= \text{dimension of hidden state}, \\  
+    Num_h &:= \text{number of heads}, \\  
+    H_d &:= \text{dimension of heads}, \\  
+\end{align*}
+The computations within the Mamba module can be divided into three components: pre-SSM, SSM, and post-SSM. The following presents a detailed derivation for each submodule.
+\begin{align*}
+    \text{Input:} ~~u \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{m}})},
+\end{align*}
+\paragraph{Pre-SSM}
+\begin{align*}
+    zxBCdt &= \mathbf{Linear_{proj}}(u) ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~2D_{in}+2N+Num_h})},\\
+    (z, xBC, dt) &= zxBCdt~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, (\mathrm{~D_{in}}, \mathrm{~D_{in}+2N}, \mathrm{~Num_h}))},\\
+    % z &= zxBCdt[:, :, :D_{in}] ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}})}\\
+    % xBC &= zxBCdt[:, :, D_{in}:2D_{in}+2N] ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}+2N})}\\
+    % dt &= zxBCdt[:, :, 2D_{in}+2N:] ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h})}\\
+    x_cB_cC_c &= \mathbf{Conv1d}(xBC) ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}+2N})},\\
+    x_{cf}B_{cf}C_{cf} &= \mathbf{SiLU}(xBC) ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}+2N})},\\
+    (x_{cf}, B_{cf}, C_{cf})&= x_{cf}B_{cf}C_{cf} ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, (\mathrm{~D_{in}}, \mathrm{~N}, \mathrm{~N}))},\\
+    % B_{cf}&= x_{cf}B_{cf}C_{cf}[:, :, D_{in}:D_{in}+N] ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~N})}\\
+    % C_{cf}&= x_{cf}B_{cf}C_{cf}[:, :, D_{in}+N:] ~~\in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~N})}\\
+    A_{init} &\sim \mathbf{Uniform}(A_{\text{min}}, A_{\text{max}}) \quad  \in \mathbb{R}^{\mathrm{Num_h}},\\
+    A_{\text{log}} &= \log(A_{init}) \quad  \in \mathbb{R}^{\mathrm{Num_h}},\\
+    A &= -\exp\left(A_{\log}\right)~~ \in \mathbb{R}^{\mathrm{Num_h}},\\
+    dtb_{init} &= \exp\left( \mathbf{rand}(\mathrm{Num_h}) \cdot (\log(\text{dt\_max}) - \log(\text{dt\_min})) + \log(\text{dt\_min}) \right) \quad  \in \mathbb{R}^{\mathrm{Num_h}},\\
+    dt_{bias} &= dtb_{init} + \log\left( -\exp\left( -dtb_{init} \right) + 1 \right) \quad  \in \mathbb{R}^{\mathrm{Num_h}},\\
+    dt_{fb} &= \mathbf{softplus}(dt + dt_{bias}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h})},\\
+    \widetilde{A} &= A \circ dt_{fb} \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h})},\\
+    \widetilde{x} &= x_{cf}.\mathbf{reshape}(B,S,Num_h,H_d) \circ dt_{fb}.\mathbf{reshape}(B,S,Num_h,1) \quad \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h}, \mathrm{~H_d})},\\
+    \widetilde{B} &= B_{cf}.\mathbf{reshape}(B,S,1,N) \quad \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, ~1, \mathrm{~N})},\\
+    \widetilde{C} &= C_{cf}.\mathbf{reshape}(B,S,1,N) \quad \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, ~1, \mathrm{~N})}.\\
+\end{align*}
+% 其中linear表示线性变换，Conv1d表示一维卷积，Silu表示silu激活函数，uniform表示均匀分布，softplus表示softplus函数，rand表示取多少个数的随机数，圈表示pointwise乘法，reshape表示维度变换操作。
+Here, $\mathbf{Linear_{proj}}$ denotes a linear transformation, $\mathbf{Conv1d}$ refers to a one-dimensional convolution, and $\mathbf{SiLU}$ represents the SiLU activation function. $\mathbf{Uniform}$ indicates sampling from a uniform distribution, while $\mathbf{softplus}$ denotes the Softplus activation function. $\mathbf{rand}$ refers to drawing a specified number of random values. The $\circ$ symbol denotes element-wise multiplication, and $\mathbf{reshape}$ indicates a dimensional transformation operation.
+
+\paragraph{SSM}
+\begin{align*}
+    % \widehat{A} &= \widetilde{A}.\mathbf{reshape}(B,Num_h,1,S) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, ~1, \mathrm{~S})}\\
+    % A_{cumsum} &= \mathbf{cumsum}(\widehat{A},dim = -1) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, ~1, \mathrm{~S})}\\
+    % A_{segsum} &= A_{cumsum}[:,:,:,:,None] - A_{cumsum}[:,:,:,None,:] \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, ~1, \mathrm{~S}, \mathrm{~S})}\\
+    % L &= \mathbf{Mask} \circ A_{segsum} \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, ~1, \mathrm{~S}, \mathrm{~S})}\\
+    \widehat{A} &= \mathbf{Mask}_1\circ\mathbf{repeat}(\widetilde{A}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, \mathrm{~S}, \mathrm{~S})},\\
+    A_{cumsum} &=\mathbf{cumsum}(\widehat{A}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, \mathrm{~S}, \mathrm{~S})},\\
+    L &= \exp(\mathbf{Mask}_2\circ A_{cumsum}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, \mathrm{~S}, \mathrm{~S})},\\
+    % \widehat{C} &= \widetilde{C}.\mathbf{reshape}(B,1,S,N) \quad  \in \mathbb{R}^{(\mathrm{B}, ~1, \mathrm{~S}, \mathrm{~N})}\\
+    % \widehat{B} &= \widetilde{B}.\mathbf{reshape}(B,1,S,N) \quad  \in \mathbb{R}^{(\mathrm{B}, ~1, \mathrm{~S}, \mathrm{~N})}\\
+    % \widehat{x} &= \widetilde{x}.\mathbf{reshape}(B,S,Num_h,H_d) \quad \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h}, \mathrm{~H_d})}\\
+    P &= \mathbf{einsum}("BSHN,BSHN \to BHSS", \widetilde{C},\widetilde{B}) \quad  \in \mathbb{R}^{(\mathrm{B}, ~1, \mathrm{~S}, \mathrm{~S})},\\
+    M &= \mathbf{einsum}("BHSS,BHSS \to BHSS", L, P) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~Num_h}, \mathrm{~S}, \mathrm{~S})},\\
+    y &= \mathbf{einsum}("BHSS,BSHP \to BSHP", M, \widetilde{x}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h}, \mathrm{~H_d})}.\\
+\end{align*}
+% 其中，mask的作用结果为保留矩阵对角线以下的元素，让包含对角线以及对角线以上的部分变为0.mask的作用结果为让对角线以上的部分变为负无穷。cumsum为让矩阵的最后两个维度ss,按第一个维度（行）从上往下逐行相加。einsum表示爱因斯坦和。
+The $\mathbf{Mask}_1$ operation is used to zero out the diagonal and upper-triangular elements of a matrix, retaining only the elements below the diagonal. The $\mathbf{Mask}_2$ sets the elements above the diagonal to negative infinity. The $\mathbf{cumsum}$ operation performs a cumulative sum along the first of the last two dimensions (i.e., across rows) in a matrix of shape $(S,S)$, summing from top to bottom. The $\mathbf{einsum}$ operation denotes the Einstein summation convention, used for concise and flexible tensor contractions.
+
+\paragraph{Post-SSM}
+\begin{align*}
+    D &= \mathbf{1}_{\mathrm{D_{in}}} \quad  \in \mathbb{R}^{\mathrm{D_{in}}},\\
+    \dot{y} &= y + x_{cf}.\mathbf{reshape}(B,S,Num_h,H_d) \times D.\mathbf{reshape}(D_{in},1) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~Num_h}, \mathrm{~H_d})},\\
+    \Ddot{y} &= \dot{y}.\mathbf{reshape}(B,S,D_{in}) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}})},\\
+     y_{z} &= \Ddot{y} \cdot \mathbf{SiLU}(z) \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}})},\\
+     y_{norm} &= y_{z} \cdot \frac{1}{\sqrt{\text{mean}(y_{z}^2, \text{axis}=-1) + \epsilon}} \cdot \mathbf{w} \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{in}})},\\
+     y_{out} &= \mathbf{Linear_{proj}}(y_{norm})  \quad  \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{m}})}.
+\end{align*}
+Here, $\mathbf{1}$ denotes a vector in which all elements are equal to 1.
+\begin{align*}
+    \text{Output:} ~~y_{out} \in \mathbb{R}^{(\mathrm{B}, \mathrm{~S}, \mathrm{~D_{m}})}.
+\end{align*}
+
+
+
+\section{Data setup}
+\subsection{Composite function task}
+\paragraph{Standard}
+% The total number of datasets is 300,000. Each anchor pair in the training set accounts for 0.056 of the total, while each anchor in the test set accounts for 0.006 of the total. 
+% The correspondence between anchors and functions is as follows: 1 corresponds to +5, 2 corresponds to +1, 3 corresponds to -2, and 4 corresponds to -8. During training, all 15 anchor pairs except 43 are included. Among them, all pairs except 34 are composed of the corresponding single-anchor functions. Pair 34 is manually set to -6, which differs from the result of its corresponding composite function, -10.
+% Note that the test set includes 43 symmetric and composite solutions. The distinction between the training set and the test set in the dataset is based on the position of the key. For sequences of length 8, each position corresponds to a congruence class modulo 8. In the training set, for each key, the key does not fall within the congruence class corresponding to its position. For example, the key 33 cannot appear in the first position of the sequence because it would then be in the congruence class modulo 8 of 1, which corresponds to that position. In contrast, in the test set, each key must exactly fall within the congruence class corresponding to its position. This setup allows the model to learn the meaning of all tokens while preventing it from relying solely on memorization to generalize to the test set.
+
+The total dataset comprises 300,000 samples, and each sequence has a fixed length of 8. Each anchor pair in the training set accounts for $5.6\%$ of the total data, while each anchor pair in the test set constitutes $0.6\%$. The mapping between anchors and their associated functions is as follows: anchor $1$ corresponds to a shift of $+5$, anchor $2$ to $+1$, anchor $3$ to $-2$, and anchor $4$ to $-8$. During training, all 15 possible anchor pairs are included except for pair 43. Among these, all pairs except 34 are derived from the composition of their corresponding single-anchor functions. Notably, the function for pair 34 is manually set to $-6$, deviating from the correct compositional result of $-10$.
+The test set contains both symmetric and compositional instances of pair 43. The distinction between training and test data is governed by the position of the key token. For sequences of length 8, each position is associated with a congruence class modulo 8. In the training set, the key token is prohibited from appearing in the position whose modulo-8 class matches its own. For example, key 33 cannot appear in the first position, as it belongs to the congruence class 1 mod 8, which is aligned with the first index. Conversely, in the test set, each key token is required to occupy the position that corresponds exactly to its modulo-8 congruence class.
+This design ensures that the model has access to the full semantic range of tokens during training while preventing it from relying solely on positional memorization to generalize to the test set.
+
+\paragraph{Full symmetry}
+The total number of datasets is 300,000, and each sequence has a fixed length of 8. Each anchor pair in the training set accounts for $4.5\%$ of the total, while each anchor in the test set accounts for $0.5\%$ of the total. 
+To ensure that the only possible solutions are symmetric, we simultaneously utilize two sets of correspondences between anchors and functions. This setup prevents the model from simply solving for individual anchor functions and instead forces it to derive symmetric solutions by understanding the symmetry of anchor pairs. 
+There are a total of five anchors: 0, 1, 2, 3, and 4. The 0 anchor is added to balance the data volume between the two function sets, thus avoiding model bias caused by disparities in data quantity. The first set of correspondences between anchors and functions is as follows: 0 corresponds to $+2$, 1 corresponds to $+5$, 2 corresponds to $+1$, 3 corresponds to $-2$, and 4 corresponds to $-8$. The second set of correspondences is: 0 corresponds to $-9$, 1 corresponds to $+6$, 2 corresponds to $-7$, and 3 corresponds to $+3$. All anchor pair functions are composed of either the first or the second set of correspondences. 
+To facilitate the observation of symmetric solutions, anchor pairs 00, 11, 22, 33, and 44 are excluded from this task.
+Thus, there are a total of 20 anchor pairs in this task. The anchor pairs following the first set of correspondences are 01, 02, 10, 20, 14, 41, 23, 32, 34, 43, a total of 10 pairs. 
+Among them, there are 4 zeros, 4 ones, 4 twos, 4 threes and 4 fours. This design ensures that each anchor has the same amount of data under the two corresponding methods, and the two corresponding methods also have the same amount of data. The anchor pairs following the second set of correspondences are 03, 30, 04, 40, 12, 21, 13, 31, 24, 42. Only 43 is not included in the training set. The purpose of this task is to observe whether the model can discover the symmetry among all anchor pairs and thus output symmetric solutions. 
+The distinction between the training set and the test set in the dataset is based on the position of the key. For sequences of length 8, each position corresponds to a congruence class modulo 8. In the training set, for each key, the key does not fall within the congruence class corresponding to its position. For example, the key 33 cannot appear in the first position of the sequence because it would then be in the congruence class modulo 8 of 1, which corresponds to that position. In contrast, in the test set, each key must exactly fall within the congruence class corresponding to its position. This setup allows the model to learn the meaning of all tokens while preventing it from relying solely on memorization to generalize to the test set.
+
+
+
+\subsection{Inverse sequence matching task}
+The total dataset consists of 100,000 samples. The sequence length varies with the number of layers in the Mamba model.
+Each sequence is generated from a generation set consisting of three distinct elements. It contains five different permutations of the elements in the generation set, where each permutation is followed by a random token that does not belong to the generation set. Each such permutation is referred to as a key sequence.
+
+One of these five sequences is randomly selected and reversed to form the query sequence, which is appended to the end of the original sequence. Between the key sequences and the query sequence, a number of randomly generated tokens—equal to the pure convolutional receptive field of Mamba are inserted to prevent the model from retrieving information through convolution. Therefore, the total sequence length can be formally expressed as follows:
+\begin{align*}
+    S = 5\times (3 + 1) + 3\times \mathbf{Num}_{layer} + 3.
+\end{align*}
+Here, $\mathbf{Num}_{layer}$ denotes the number of layers in the Mamba model. For example, in the case of a two-layer Mamba model, the sequence length is 29. To ensure a fair comparison, Mamba and Transformer models with the same number of layers are trained on identical sequence configurations.
+
+The training set constitutes 80\% of the total dataset, while the test set and the out-of-distribution (OOD) set each account for 10\%. In the training set, the three elements in the generating set do not all belong to the same congruence class modulo 3. In contrast, in the test set, all three elements in the generating set belong to the same congruence class modulo 3. For both the training and test sets, all numerical values in the sequences are drawn from the range 20 to 100. In the OOD set, however, all sequence elements are drawn from the range 101 to 200, and the generation set is not subject to any congruence constraints.
+
+
+
+
+
+
+
+\section{Training setup}
+Unless otherwise specified, all tasks in this work adopt the following training parameter settings. The learning rate is initially set to 1e-5 at the start of training, warmed up to 25 times its initial value within 10 epochs, and then decreases to 1e-5 via cosine decay at 200 epochs. The training optimizer is AdamW with parameters set as $\beta_1 =0.9$, $\beta_2 =0.999$, $eps = 1e-8$, and weight decay=1e-2. Meanwhile, gradient clipping is applied with a maximum norm of 1. For composite function tasks, the batch size is set to 2048, while for inverse sequence matching tasks, the batch size is 1024. The loss function used for training is the cross - entropy loss function, which is calculated only for the last token of the model output sequence.
+\section{Experiment detail and result}
+\subsection{Composite function task}
+\subsubsection{Phase diagram of Mamba on the composite function task}
+\paragraph{Mamba configurations}
+The dimension of model is set to 32, the dimension of hidden state is set to the default value of 128, and the expansion factor is set to the default value of 2, and the activation function employed throughout the model is the Sigmoid Linear Unit (SiLU). To facilitate clear observation, all experiments are conducted using a single head. The convolution kernel length is set to its default value of 4. 
+The values reported at different positions represent the mean results obtained using three fixed random seeds. Across these positions, the only variations are in the model's depth or initialization.
+
+
+% \paragraph{Extended Results}
+% To further verify Mamba’s preference for the composite solution and its difficulty in learning the symmetric solution, we modified only the model dimension to 128 and obtained the phase diagram.
+% As shown, the experimental results are largely consistent with the phase diagram presented in the main text: Mamba consistently learns the compositional solution, while struggling to capture the symmetric one.
+
+
+
+
+
+\subsubsection{Experiments with all-one convolution}
+\paragraph{Mamba configurations}
+To investigate whether the asymmetry of convolution is responsible for Mamba's difficulty in learning the symmetric solution, we select a model configuration under which Mamba successfully learns the compositional solution but fails to learn the symmetric one. Specifically, we use a five-layer Mamba model with small initialization($\gamma = 1$), while all other settings are consistent with those used in the phase diagram experiments.
+
+
+\subsubsection{Experiments with positional encoding}
+\paragraph{Mamba configurations}
+To examine whether Mamba's bias for asymmetry in the composite function task arises from its lack of explicit positional encoding, thus encouraging reliance on convolution. We select a configuration under which Mamba struggles to learn both the composite and symmetric solutions. Specifically, we use a two-layer Mamba model with standard initialization($\gamma = 0.5$). All other settings are kept consistent with those used in the phase diagram experiments.
+
+\subsubsection{Experiment under full symmetry}
+\paragraph{Mamba configurations}
+To validate Mamba's difficulty in solving the composite function task under fully symmetric settings, we set dimension of model to 128, while keeping all other settings consistent with those used in the phase diagram experiments. The number of layers is varied across 2, 3, 4, 5, and 6, and standard initialization($\gamma = 0.5$) is applied.
+
+\paragraph{Extended results}
+ For each configuration, experiments are conducted using three fixed random seeds. The results are shown in the Fig.~\ref{sup_acc_totalsymmetry} and Fig.~\ref{sup_loss_totalsymmetry}. As can be observed, under all configurations, Mamba consistently struggles to solve the composite function task in the fully symmetric setting.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_acc_totalsymmetry.png}
+    \caption{Accuracy of Mamba under fully symmetric setting. The horizontal axis represents the random seed, while the vertical axis corresponds to the number of layers in the Mamba model.}
+    \label{sup_acc_totalsymmetry}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_loss_totalsymmetry.png}
+    \caption{Loss of Mamba under fully symmetric setting. The horizontal axis represents the random seed, while the vertical axis corresponds to the number of layers in the Mamba model.}
+    \label{sup_loss_totalsymmetry}
+\end{figure}
+
+\subsubsection{Cosine similarity among convolution weights}
+Mamba's asymmetry bias originates from its nonlinear convolution, specifically from the asymmetry of its convolutional kernel parameters. To investigate this asymmetry, we examined the cosine similarity between the convolutional kernels at the beginning and the end of training, as shown in the Fig.~\ref{sup_conv1d_cos}, and found that they are nearly orthogonal. This indicates that the convolutional parameters exhibit strong asymmetry throughout the training process.
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/conv1d_cos.png}
+    \caption{Cosine similarity of convolutional kernel parameters between epoch 0 and epoch 209 for the two-layer Mamba model. The model configuration is consistent with that used in the phase diagram experiments. In this figure, Mamba is configured with two layers and initialized with $\gamma = 1$.}
+    \label{sup_conv1d_cos}
+\end{figure}
+
+% \begin{figure}[htbp]
+%     \centering
+
+%     \begin{subfigure}[t]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{sup_pic/Layer_0-Epoch_0-Conv1d_Cos.png}
+%         \caption{Layer 0 - Epoch 0}
+%         \label{fig:sub1}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[t]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{sup_pic/Layer_0-Epoch_209-Conv1d_Cos.png}
+%         \caption{Layer 0 - Epoch 209}
+%         \label{fig:sub2}
+%     \end{subfigure}
+
+%     \vspace{1cm} % 在两行子图之间添加垂直间距
+
+%     \begin{subfigure}[t]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{sup_pic/Layer_1-Epoch_0-Conv1d_Cos.png}
+%         \caption{Layer 1 - Epoch 0}
+%         \label{fig:sub3}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[t]{0.45\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{sup_pic/Layer_1-Epoch_209-Conv1d_Cos.png}
+%         \caption{Layer 1 - Epoch 209}
+%         \label{fig:sub4}
+%     \end{subfigure}
+
+%     \caption{Cosine similarity of convolutional kernel parameters between epoch 0 and epoch 209 for the two-layer Mamba model. The model configuration is consistent with that used in the phase diagram experiments. In this figure, Mamba is configured with two layers and initialized with $\gamma = 1$.}
+%     \label{sup_conv1d_cos}
+% \end{figure}
+
+
+
+\subsection{Inverse sequence matching task}
+\paragraph{Mamba configurations}
+The dimension of model is set to 128, the dimension of hidden state is set to the default value of 128, and the expansion factor is set to the default value of 2. 
+The activation function used is SiLU. To clearly isolate the structural differences between Transformer and Mamba and ensure a fair comparison, the Transformer model also adopts SiLU as its activation function.
+The convolution kernel length is set to its default value of 4, and the number of heads is fixed at 1.
+\paragraph{Transformer configurations}
+The dimension of model is set to 128, consistent with the Mamba configuration. To ensure a fair comparison, the Transformer also adopts a $2\times$ dimensional expansion when generating value vectors, mirroring Mamba’s setup. Specifically, the dimensions of the query and key vectors are set to 128, while the value vectors have a dimension of 256. 
+Additionally, to ensure a fair comparison and maintain a comparable number of parameters between the two models, the Transformer’s feedforward network (FNN) uses a hidden dimension of 128, and, like Mamba, it is configured with only a single attention head throughout.
+
+\paragraph{Extended results}
+All experiments are conducted using the same set of random seeds to ensure fairness in comparison.
+
+To evaluate Mamba’s difficulty in solving the inverse sequence matching task, we vary the model depth across 2, 3, 4, and 5 layers, and consider different initialization strategies ranging from standard to small initialization($\gamma = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0$). The detailed results are shown in the Fig.~\ref{sup_acc_inverse} and Fig.~\ref{sup_loss_inverse}.
+It can be observed that Mamba fails to solve the inverse sequence matching task under nearly all configurations.
+
+For the two-layer Transformer, results under different initialization schemes($\gamma = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0$) are shown in the Fig.~\ref{sup_acc_m-t-mm} and Fig.~\ref{sup_loss_m-t-mm}. It can be seen that even with a small number of layers, the Transformer outperforms Mamba.
+
+The results of the modified two-layer Mamba under different initialization schemes($\gamma = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0$)  are shown in the Fig.~\ref{sup_acc_m-t-mm} and Fig.~\ref{sup_loss_m-t-mm}. It can be observed that the modified Mamba not only significantly outperforms standard Mamba, but also substantially surpasses the performance of the Transformer.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_acc_inverse.png}
+    \caption{Accuracy of Mamba under different configurations on the inverse sequence matching task. The horizontal axis represents the number of layers in the Mamba model, while the vertical axis corresponds to the initialization scheme.}
+    \label{sup_acc_inverse}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_loss_inverse.png}
+    \caption{Loss of Mamba under different configurations on the inverse sequence matching task. The horizontal axis represents the number of layers in the Mamba model, while the vertical axis corresponds to the initialization scheme.}
+    \label{sup_loss_inverse}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_acc_m-t-mm.png}
+    \caption{Accuracy of Mamba, Transformer, and modified Mamba on the inverse sequence matching task. Left: Mamba (2-layer), Center: Transformer (2-layer), Right: Modified Mamba (2-layer); all under varying initialization schemes.}
+    \label{sup_acc_m-t-mm}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.999\textwidth]{sup_pic/sup_loss_m-t-mm.png}
+    \caption{Loss of Mamba, Transformer, and modified Mamba on the inverse sequence matching task. Left: Mamba (2-layer), Center: Transformer (2-layer), Right: Modified Mamba (2-layer); all under varying initialization schemes.}
+    \label{sup_loss_m-t-mm}
+\end{figure}
+
+\paragraph{Experiments with alternative architectural modifications}
+From our experiments, we observe that Mamba's bias toward asymmetry originates from the inherent asymmetry introduced by its nonlinear convolution. However, by introducing a residual connection that bypasses this nonlinear convolution, the impact of such asymmetry can be effectively mitigated. This allows Mamba to leverage the SSM module for information extraction and even achieve performance comparable to or surpassing that of Transformers on the inverse sequence matching task.
+
+It is important to emphasize that, in order for the SSM to extract information in a manner similar to Attention, positional awareness of tokens is essential. Therefore, positional embedding must be incorporated. In fact, the addition of positional embedding plays a significant role in the inverse sequence matching task as well.
+
+In addition to introducing the residual connection that bypasses the nonlinear convolution, we also conducted another set of architectural experiments.
+Inspired by the original Mamba architecture, another possible way to inject the raw token information is through a "gating mechanism". For example, one might use a pointwise product between the original token and the fused token (after nonlinear convolution) as the input to the SSM. We additionally conducted multiple experiments on this approach, and the results are shown in 
+Fig.~\ref{sup_acc_loss_convresgate}. The following presents the computation process of the gating mechanism. Given the input $U$ to the Mamba block, we have:
+\begin{equation}
+\begin{aligned}
+ (\tilde{U}, Z, d t)&=\text { Linear }(U), \quad U \in R^{(s, d)}, \tilde{U} \in R^{(s, 2 d+2 h)}, Z \in R^{(s, 2 d)}, d t \in R^{\left(s, N_h\right)}, \\
+ (B, C, X)&=\sigma(\operatorname{Conv1d}(\tilde{U})), \quad B \in R^{(s, h)}, C \in R^{(s, h)}, X \in R^{(s, 2 d)}, \\
+ (\tilde{B}, \tilde{C}, \tilde{X})&=(B, C, X) \circ \tilde{U}, \quad \tilde{B} \in R^{(s, h)}, \tilde{C} \in R^{(s, h)}, \tilde{X} \in R^{(s, 2 d)}.
+\end{aligned}
+\end{equation}
+
+Finally, $\tilde{B}$, $\tilde{C}$, and $\tilde{X}$ serve as the input to the SSM.
+
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.777\textwidth]{sup_pic/Acc-LOSS-Mamba_convresgate.png}
+    \caption{Accuracy (left) and loss (right) curves of Mamba with gate residual connections on the inverse sequence matching task. The architecture of gate-residual Mamba is consistent with that of residual Mamba. From top to bottom, the initialization is set to $\gamma = 0.5$, $\gamma = 0.6$, $\gamma = 0.7$, $\gamma = 0.8$, $\gamma = 0.9$, and $\gamma = 1.0$.}
+    \label{sup_acc_loss_convresgate}
+\end{figure}
+
+% \textbf{State Space Models (SSM), Mamba, and Their Shortcomings.}
+% State space models (SSM) originate from neuromorphic spiking models \citep{voelker2019dynamical, voelker2019legendre} and have gained prominence through several key developments, such as S4 \citep{gu2022efficiently}, S5 \citep{smith2023simplified}, the RWKV series \citep{rwkv45, RWKV6}, RetNet \citep{sun2023retentivenetworksuccessortransformer}, and GLA \citep{pmlr-v235-yang24ab}. Among these, Mamba2 \citep{gu2023mamba} stands out by delivering performance competitive with Transformers while requiring significantly lower computational resources. However, numerous studies reveal that Mamba has notable limitations. Research including \citep{ben-kish2025decimamba, ye2025longmamba, yuan2025remambaequipmambaeffective} indicates that Mamba generally underperforms compared to Transformers in tasks involving long-context understanding, prompting the development of alternative models like DeciMamba, LongMamba, and ReMamba. Similarly, \citep{park2024can, waleffe2024empiricalstudymambabasedlanguage} explore Mamba’s in-context learning abilities and conclude that they fall short of Transformer capabilities. Additionally, \citep{arora2023zoologymeasuringimprovingrecall, jelassi2024repeatmetransformersbetter} demonstrate that Mamba struggles with retrieval tasks, such as copying information from the input context. Some studies, such as \citep{xu2025statespacemodelsstrong}, also examine the practical efficiency of Mamba compared to Transformers, noting that despite its theoretical advantages, real-world performance can be lacking. Furthermore, \citep{ren2024mambaenjoyfreelunch} introduces a ‘COPY’ task, which exposes a performance bottleneck in Mamba. Our research offers deeper insights into these shortcomings of Mamba, providing a comprehensive analysis and proposing a solution to address them.
+
+
+
+% \textbf{Understanding the Mechanism of Neural Network Models.} Our work conducts an in-depth investigation into the internal mechanisms of Mamba. We draw inspiration from prior studies on the attention mechanism in Transformers \citep{voita2019analyzing, vig2019multiscale, kovaleva2019revealing, kobayashi2020attention}. In identifying the functional roles of key modules in Mamba presented in this paper, we adopt the commonly used techniques of perturbation and causal intervention from research on interpretability in large language models \citep{vig2020investigating, jeoung2022changed, wang2022interpretability, conmy2023towards, merullo2023circuit, guo2023transformers, wang2024understanding, amsel2024benefits, li2024chain, wang2024understanding1}. The construction of synthetic datasets in our study is primarily inspired by the works of \citet{poli2024mechanistic} and \citet{zhang2024anchor}. The design of our composite function tasks directly follows the approach used in \citet{zhang2024initialization}. Additionally, several insightful theoretical studies on feedforward neural networks have also informed our theoretical analysis. For instance, various works explore the preferences and generalization capabilities of neural networks from perspectives such as regularization, frequency, and dynamics \citep{xu2019frequency, wang2024improving, jacot2018neural, jacot2020implicit, arora2019fine, arora2018convergence, wu2023implicit, wang2310theoretical, arora2022understanding, li2021validity, wu2018sgd, zhu2018anisotropic, arora2019exact, ren2024understanding}.
+
+
+
+% \section{Headings: first level}
+% \label{headings}
+
+
+% All headings should be lower case (except for first word and proper nouns),
+% flush left, and bold.
+
+
+% First-level headings should be in 12-point type.
+
+
+% \subsection{Headings: second level}
+
+
+% Second-level headings should be in 10-point type.
+
+
+% \subsubsection{Headings: third level}
+
+
+% Third-level headings should be in 10-point type.
+
+
+% \paragraph{Paragraphs}
+
+
+% There is also a \verb+\paragraph+ command available, which sets the heading in
+% bold, flush left, and inline with the text, with the heading followed by 1\,em
+% of space.
+
+
+% \section{Citations, figures, tables, references}
+% \label{others}
+
+
+% These instructions apply to everyone.
+
+
+% \subsection{Citations within the text}
+
+
+% The \verb+natbib+ package will be loaded for you by default.  Citations may be
+% author/year or numeric, as long as you maintain internal consistency.  As to the
+% format of the references themselves, any style is acceptable as long as it is
+% used consistently.
+
+
+% The documentation for \verb+natbib+ may be found at
+% \begin{center}
+%   \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
+% \end{center}
+% Of note is the command \verb+\citet+, which produces citations appropriate for
+% use in inline text.  For example,
+% \begin{verbatim}
+%    \citet{hasselmo} investigated\dots
+% \end{verbatim}
+% produces
+% \begin{quote}
+%   Hasselmo, et al.\ (1995) investigated\dots
+% \end{quote}
+
+
+% If you wish to load the \verb+natbib+ package with options, you may add the
+% following before loading the \verb+neurips_2025+ package:
+% \begin{verbatim}
+%    \PassOptionsToPackage{options}{natbib}
+% \end{verbatim}
+
+
+% If \verb+natbib+ clashes with another package you load, you can add the optional
+% argument \verb+nonatbib+ when loading the style file:
+% \begin{verbatim}
+%    \usepackage[nonatbib]{neurips_2025}
+% \end{verbatim}
+
+
+% As submission is double blind, refer to your own published work in the third
+% person. That is, use ``In the previous work of Jones et al.\ [4],'' not ``In our
+% previous work [4].'' If you cite your other papers that are not widely available
+% (e.g., a journal paper under review), use anonymous author names in the
+% citation, e.g., an author of the form ``A.\ Anonymous'' and include a copy of the anonymized paper in the supplementary material.
+
+
+% \subsection{Footnotes}
+
+
+% Footnotes should be used sparingly.  If you do require a footnote, indicate
+% footnotes with a number\footnote{Sample of the first footnote.} in the
+% text. Place the footnotes at the bottom of the page on which they appear.
+% Precede the footnote with a horizontal rule of 2~inches (12~picas).
+
+
+% Note that footnotes are properly typeset \emph{after} punctuation
+% marks.\footnote{As in this example.}
+
+
+% \subsection{Figures}
+
+
+% \begin{figure}
+%   \centering
+%   \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+%   \caption{Sample figure caption.}
+% \end{figure}
+
+
+% All artwork must be neat, clean, and legible. Lines should be dark enough for
+% purposes of reproduction. The figure number and caption always appear after the
+% figure. Place one line space before the figure caption and one line space after
+% the figure. The figure caption should be lower case (except for first word and
+% proper nouns); figures are numbered consecutively.
+
+
+% You may use color figures.  However, it is best for the figure captions and the
+% paper body to be legible if the paper is printed in either black/white or in
+% color.
+
+
+% \subsection{Tables}
+
+
+% All tables must be centered, neat, clean and legible.  The table number and
+% title always appear before the table.  See Table~\ref{sample-table}.
+
+
+% Place one line space before the table title, one line space after the
+% table title, and one line space after the table. The table title must
+% be lower case (except for first word and proper nouns); tables are
+% numbered consecutively.
+
+
+% Note that publication-quality tables \emph{do not contain vertical rules.} We
+% strongly suggest the use of the \verb+booktabs+ package, which allows for
+% typesetting high-quality, professional tables:
+% \begin{center}
+%   \url{https://www.ctan.org/pkg/booktabs}
+% \end{center}
+% This package was used to typeset Table~\ref{sample-table}.
+
+
+% \begin{table}
+%   \caption{Sample table title}
+%   \label{sample-table}
+%   \centering
+%   \begin{tabular}{lll}
+%     \toprule
+%     \multicolumn{2}{c}{Part}                   \\
+%     \cmidrule(r){1-2}
+%     Name     & Description     & Size ($\mu$m) \\
+%     \midrule
+%     Dendrite & Input terminal  & $\sim$100     \\
+%     Axon     & Output terminal & $\sim$10      \\
+%     Soma     & Cell body       & up to $10^6$  \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \subsection{Math}
+% Note that display math in bare TeX commands will not create correct line numbers for submission. Please use LaTeX (or AMSTeX) commands for unnumbered display math. (You really shouldn't be using \$\$ anyway; see \url{https://tex.stackexchange.com/questions/503/why-is-preferable-to} and \url{https://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath} for more information.)
+
+% \subsection{Final instructions}
+
+% Do not change any aspects of the formatting parameters in the style files.  In
+% particular, do not modify the width or length of the rectangle the text should
+% fit into, and do not change font sizes (except perhaps in the
+% \textbf{References} section; see below). Please note that pages should be
+% numbered.
+
+
+% \section{Preparing PDF files}
+
+
+% Please prepare submission files with paper size ``US Letter,'' and not, for
+% example, ``A4.''
+
+
+% Fonts were the main cause of problems in the past years. Your PDF file must only
+% contain Type 1 or Embedded TrueType fonts. Here are a few instructions to
+% achieve this.
+
+
+% \begin{itemize}
+
+
+% \item You should directly generate PDF files using \verb+pdflatex+.
+
+
+% \item You can check which fonts a PDF files uses.  In Acrobat Reader, select the
+%   menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
+%   also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
+%   available out-of-the-box on most Linux machines.
+
+
+% \item \verb+xfig+ "patterned" shapes are implemented with bitmap fonts.  Use
+%   "solid" shapes instead.
+
+
+% \item The \verb+\bbold+ package almost always uses bitmap fonts.  You should use
+%   the equivalent AMS Fonts:
+% \begin{verbatim}
+%    \usepackage{amsfonts}
+% \end{verbatim}
+% followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or \verb+\mathbb{C}+
+% for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You can also use the following
+% workaround for reals, natural and complex:
+% \begin{verbatim}
+%    \newcommand{\RR}{I\!\!R} %real numbers
+%    \newcommand{\Nat}{I\!\!N} %natural numbers
+%    \newcommand{\CC}{I\!\!\!\!C} %complex numbers
+% \end{verbatim}
+% Note that \verb+amsfonts+ is automatically loaded by the \verb+amssymb+ package.
+
+
+% \end{itemize}
+
+
+% If your file contains type 3 fonts or non embedded TrueType fonts, we will ask
+% you to fix it.
+
+
+% \subsection{Margins in \LaTeX{}}
+
+
+% Most of the margin problems come from figures positioned by hand using
+% \verb+\special+ or other commands. We suggest using the command
+% \verb+\includegraphics+ from the \verb+graphicx+ package. Always specify the
+% figure width as a multiple of the line width as in the example below:
+% \begin{verbatim}
+%    \usepackage[pdftex]{graphicx} ...
+%    \includegraphics[width=0.8\linewidth]{myfile.pdf}
+% \end{verbatim}
+% See Section 4.4 in the graphics bundle documentation
+% (\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
+
+
+% A number of width problems arise when \LaTeX{} cannot properly hyphenate a
+% line. Please give LaTeX hyphenation hints using the \verb+\-+ command when
+% necessary.
+
+% \begin{ack}
+% Use unnumbered first level headings for the acknowledgments. All acknowledgments
+% go at the end of the paper before the list of references. Moreover, you are required to declare
+% funding (financial activities supporting the submitted work) and competing interests (related financial activities outside the submitted work).
+% More information about this disclosure can be found at: \url{https://neurips.cc/Conferences/2025/PaperInformation/FundingDisclosure}.
+
+
+% Do {\bf not} include this section in the anonymized submission, only in the final paper. You can use the \texttt{ack} environment provided in the style file to automatically hide this section in the anonymized submission.
+% \end{ack}
+% \bibliography{main}
+% \bibliographystyle{plainnat}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \appendix
+
+% \section{Technical Appendices and Supplementary Material}
+% Technical appendices with additional results, figures, graphs and proofs may be submitted with the paper submission before the full submission deadline (see above), or as a separate PDF in the ZIP file below before the supplementary material deadline. There is no page limit for the technical appendices.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
