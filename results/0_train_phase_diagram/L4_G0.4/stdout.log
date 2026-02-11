@@ -165,3 +165,52 @@ Epoch 155/200 | Loss: 0.0001 | LR: 0.000043
 Epoch 156/200 | Loss: 0.0001 | LR: 0.000042
 Epoch 157/200 | Loss: 0.0001 | LR: 0.000040
 Epoch 158/200 | Loss: 0.0001 | LR: 0.000039
+Epoch 159/200 | Loss: 0.0001 | LR: 0.000038
+Epoch 160/200 | Loss: 0.0001 | Comp Acc: 0.0261 (best: 0.0356@100) | Sym Acc: 0.0289 (best: 0.0717@20) | LR: 0.000037
+Epoch 161/200 | Loss: 0.0001 | LR: 0.000035
+Epoch 162/200 | Loss: 0.0001 | LR: 0.000034
+Epoch 163/200 | Loss: 0.0001 | LR: 0.000033
+Epoch 164/200 | Loss: 0.0001 | LR: 0.000032
+Epoch 165/200 | Loss: 0.0001 | LR: 0.000031
+Epoch 166/200 | Loss: 0.0000 | LR: 0.000030
+Epoch 167/200 | Loss: 0.0000 | LR: 0.000028
+Epoch 168/200 | Loss: 0.0000 | LR: 0.000027
+Epoch 169/200 | Loss: 0.0000 | LR: 0.000026
+Epoch 170/200 | Loss: 0.0000 | Comp Acc: 0.0206 (best: 0.0356@100) | Sym Acc: 0.0289 (best: 0.0717@20) | LR: 0.000025
+Epoch 171/200 | Loss: 0.0000 | LR: 0.000024
+Epoch 172/200 | Loss: 0.0000 | LR: 0.000024
+Epoch 173/200 | Loss: 0.0000 | LR: 0.000023
+Epoch 174/200 | Loss: 0.0000 | LR: 0.000022
+Epoch 175/200 | Loss: 0.0000 | LR: 0.000021
+Epoch 176/200 | Loss: 0.0000 | LR: 0.000020
+Epoch 177/200 | Loss: 0.0000 | LR: 0.000019
+Epoch 178/200 | Loss: 0.0000 | LR: 0.000019
+Epoch 179/200 | Loss: 0.0000 | LR: 0.000018
+Epoch 180/200 | Loss: 0.0000 | Comp Acc: 0.0228 (best: 0.0356@100) | Sym Acc: 0.0261 (best: 0.0717@20) | LR: 0.000017
+Epoch 181/200 | Loss: 0.0000 | LR: 0.000017
+Epoch 182/200 | Loss: 0.0000 | LR: 0.000016
+Epoch 183/200 | Loss: 0.0000 | LR: 0.000015
+Epoch 184/200 | Loss: 0.0000 | LR: 0.000015
+Epoch 185/200 | Loss: 0.0000 | LR: 0.000014
+Epoch 186/200 | Loss: 0.0000 | LR: 0.000014
+Epoch 187/200 | Loss: 0.0000 | LR: 0.000013
+Epoch 188/200 | Loss: 0.0000 | LR: 0.000013
+Epoch 189/200 | Loss: 0.0000 | LR: 0.000012
+Epoch 190/200 | Loss: 0.0000 | Comp Acc: 0.0211 (best: 0.0356@100) | Sym Acc: 0.0261 (best: 0.0717@20) | LR: 0.000012
+Epoch 191/200 | Loss: 0.0000 | LR: 0.000012
+Epoch 192/200 | Loss: 0.0000 | LR: 0.000011
+Epoch 193/200 | Loss: 0.0000 | LR: 0.000011
+Epoch 194/200 | Loss: 0.0000 | LR: 0.000011
+Epoch 195/200 | Loss: 0.0000 | LR: 0.000011
+Epoch 196/200 | Loss: 0.0000 | LR: 0.000010
+Epoch 197/200 | Loss: 0.0000 | LR: 0.000010
+Epoch 198/200 | Loss: 0.0000 | LR: 0.000010
+Epoch 199/200 | Loss: 0.0000 | LR: 0.000010
+Epoch 200/200 | Loss: 0.0000 | Comp Acc: 0.0206 (best: 0.0356@100) | Sym Acc: 0.0289 (best: 0.0717@20) | LR: 0.000010
+
+Training finished at epoch 200.
+Best Composite Accuracy: 0.0356 (epoch 100)
+Best Symmetric Accuracy: 0.0717 (epoch 20)
+Metrics saved to results/0_train_phase_diagram/L4_G0.4/metrics.json
+
+Training completed successfully!

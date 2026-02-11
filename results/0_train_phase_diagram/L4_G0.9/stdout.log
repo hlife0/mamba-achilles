@@ -1,0 +1,55 @@
+Configuration saved to results/0_train_phase_diagram/L4_G0.9/config.json
+Using device: cuda
+Creating datasets...
+Train dataset size: 300000
+Eval dataset size: 1800
+Creating model: MambaForComposite
+Model parameters: 67,628
+
+Starting training for 200 epochs...
+Epoch 1/200 | Loss: 4.6097 | LR: 0.000010
+Epoch 2/200 | Loss: 4.6020 | LR: 0.000034
+Epoch 3/200 | Loss: nan | LR: 0.000058
+Epoch 4/200 | Loss: nan | LR: 0.000082
+Epoch 5/200 | Loss: nan | LR: 0.000106
+Epoch 6/200 | Loss: nan | LR: 0.000130
+Epoch 7/200 | Loss: nan | LR: 0.000154
+Epoch 8/200 | Loss: nan | LR: 0.000178
+Epoch 9/200 | Loss: nan | LR: 0.000202
+Epoch 10/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000226
+Epoch 11/200 | Loss: nan | LR: 0.000250
+Epoch 12/200 | Loss: nan | LR: 0.000250
+Epoch 13/200 | Loss: nan | LR: 0.000250
+Epoch 14/200 | Loss: nan | LR: 0.000250
+Epoch 15/200 | Loss: nan | LR: 0.000250
+Epoch 16/200 | Loss: nan | LR: 0.000250
+Epoch 17/200 | Loss: nan | LR: 0.000249
+Epoch 18/200 | Loss: nan | LR: 0.000249
+Epoch 19/200 | Loss: nan | LR: 0.000249
+Epoch 20/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000249
+Epoch 21/200 | Loss: nan | LR: 0.000248
+Epoch 22/200 | Loss: nan | LR: 0.000248
+Epoch 23/200 | Loss: nan | LR: 0.000248
+Epoch 24/200 | Loss: nan | LR: 0.000247
+Epoch 25/200 | Loss: nan | LR: 0.000247
+Epoch 26/200 | Loss: nan | LR: 0.000246
+Epoch 27/200 | Loss: nan | LR: 0.000246
+Epoch 28/200 | Loss: nan | LR: 0.000245
+Epoch 29/200 | Loss: nan | LR: 0.000245
+Epoch 30/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000244
+Epoch 31/200 | Loss: nan | LR: 0.000243
+Epoch 32/200 | Loss: nan | LR: 0.000243
+Epoch 33/200 | Loss: nan | LR: 0.000242
+Epoch 34/200 | Loss: nan | LR: 0.000241
+Epoch 35/200 | Loss: nan | LR: 0.000241
+Epoch 36/200 | Loss: nan | LR: 0.000240
+Epoch 37/200 | Loss: nan | LR: 0.000239
+Epoch 38/200 | Loss: nan | LR: 0.000238
+Epoch 39/200 | Loss: nan | LR: 0.000237
+Epoch 40/200 | Loss: nan | Comp Acc: 0.0000 (best: 0.0000@0) | Sym Acc: 0.0000 (best: 0.0000@0) | LR: 0.000236
+Epoch 41/200 | Loss: nan | LR: 0.000236
+Epoch 42/200 | Loss: nan | LR: 0.000235
+Epoch 43/200 | Loss: nan | LR: 0.000234
+Epoch 44/200 | Loss: nan | LR: 0.000233
+Epoch 45/200 | Loss: nan | LR: 0.000232
+Epoch 46/200 | Loss: nan | LR: 0.000230

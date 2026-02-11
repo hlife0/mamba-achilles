@@ -3,6 +3,9 @@ Mamba model wrapper for composite function task.
 
 This module wraps the mamba_ssm.models.mixer_seq_simple.MambaLMHeadModel
 with custom gamma-based initialization and outputs only the last token logits.
+
+Uses Mamba2 (SSD) architecture as described in the paper's supplementary
+material Section B, with single head (headdim = expand * d_model).
 """
 
 import torch
@@ -13,6 +16,38 @@ try:
     from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
     from mamba_ssm.models.config_mamba import MambaConfig
     MAMBA_AVAILABLE = True
+
+    # --- Mamba2 compatibility patches ---
+    # The Triton kernels in mamba-ssm 2.2.2 have issues with our Triton 2.1.0:
+    # 1. causal_conv1d requires 8-byte aligned strides (fix: make contiguous)
+    # 2. mamba_chunk_scan_combined backward crashes in Triton (fix: use ref impl)
+    import mamba_ssm.modules.mamba2 as _mamba2_module
+    from mamba_ssm.ops.triton.ssd_combined import ssd_chunk_scan_combined_ref
+
+    _original_conv1d_fn = _mamba2_module.causal_conv1d_fn
+
+    def _patched_conv1d_fn(x, weight, bias=None, activation=None, seq_idx=None):
+        x = x.contiguous()
+        return _original_conv1d_fn(x, weight, bias=bias, activation=activation,
+                                   seq_idx=seq_idx)
+
+    def _patched_chunk_scan(x, dt, A, B, C, chunk_size, D=None, z=None,
+                            dt_bias=None, dt_softplus=False,
+                            return_final_states=False, **kwargs):
+        seqlen = x.shape[1]
+        result = ssd_chunk_scan_combined_ref(
+            x, dt, A, B, C, seqlen, D=D, z=z,
+            dt_bias=dt_bias, dt_softplus=dt_softplus
+        )
+        if return_final_states:
+            return (result,
+                    torch.zeros(x.shape[0], x.shape[2], x.shape[3],
+                                B.shape[-1], device=x.device, dtype=x.dtype))
+        return result
+
+    _mamba2_module.causal_conv1d_fn = _patched_conv1d_fn
+    _mamba2_module.mamba_chunk_scan_combined = _patched_chunk_scan
+
 except ImportError:
     MAMBA_AVAILABLE = False
     print("Warning: mamba_ssm not installed. Install with: pip install mamba-ssm")
@@ -78,15 +113,18 @@ class MambaForComposite(nn.Module):
         else:
             self.device = device
 
-        # Create Mamba config
+        # Create Mamba2 config (paper uses Mamba2/SSD with single head)
+        d_inner = expand * d_model
         config = MambaConfig(
             d_model=d_model,
             n_layer=n_layers,
             vocab_size=vocab_size,
             ssm_cfg=dict(
+                layer='Mamba2',
                 d_state=d_state,
                 d_conv=d_conv,
                 expand=expand,
+                headdim=d_inner,  # single head: headdim = d_inner -> nheads = 1
             ),
             rms_norm=True,
             fused_add_norm=False,
@@ -95,6 +133,10 @@ class MambaForComposite(nn.Module):
 
         # Create Mamba backbone
         self.backbone = MambaLMHeadModel(config)
+
+        # Disable fused mem-efficient path (incompatible with our Triton version)
+        for layer in self.backbone.backbone.layers:
+            layer.mixer.use_mem_eff_path = False
 
         # Apply gamma-based initialization
         self._init_params(gamma)
